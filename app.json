@@ -1,0 +1,14 @@
+{
+  "name": "ZeroSess",
+  "description": "Production-grade Telegram Pyrogram/Telethon session string generator with zero logs and auto-burn",
+  "repository": "https://github.com/saahiyo-cloud/ZeroSess",
+  "keywords": ["telegram", "pyrogram", "telethon", "session", "bot"],
+  "stack": "container",
+  "env": {
+    "API_ID": { "description": "From https://my.telegram.org", "required": true },
+    "API_HASH": { "description": "32 hex chars from my.telegram.org", "required": true },
+    "BOT_TOKEN": { "description": "From @BotFather", "required": true },
+    "OWNER_ID": { "description": "Your Telegram ID", "required": false },
+    "MUST_JOIN": { "description": "@channel to force join (optional)", "required": false }
+  }
+}

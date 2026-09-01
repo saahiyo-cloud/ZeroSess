@@ -1,0 +1,13 @@
+services:
+  - type: worker
+    name: session-gen-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m bot
+    envVars:
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
