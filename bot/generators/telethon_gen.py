@@ -2,7 +2,7 @@ import re
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 from telethon.errors import (
-    ApiIdInvalidError, ApiHashInvalidError,
+    ApiIdInvalidError,
     PhoneNumberInvalidError, PhoneNumberBannedError, PhoneNumberFloodError,
     PhoneCodeInvalidError, PhoneCodeExpiredError,
     SessionPasswordNeededError, PasswordHashInvalidError, FloodWaitError,
@@ -27,9 +27,7 @@ async def create_client(api_id: int, api_hash: str) -> TelegramClient:
     try:
         await c.connect()
     except ApiIdInvalidError:
-        raise GenError("❌ Invalid `API_ID` — check https://my.telegram.org")
-    except ApiHashInvalidError:
-        raise GenError("❌ Invalid `API_HASH` — 32 hex chars from my.telegram.org")
+        raise GenError("❌ Invalid `API_ID` or `API_HASH` — check https://my.telegram.org")
     except FloodWaitError as e:
         raise GenError(f"🚦 FloodWait: retry in {e.seconds}s.")
     except Exception as e:
