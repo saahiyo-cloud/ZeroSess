@@ -5,13 +5,22 @@ from telethon.errors import (
     ApiIdInvalidError, ApiHashInvalidError,
     PhoneNumberInvalidError, PhoneNumberBannedError, PhoneNumberFloodError,
     PhoneCodeInvalidError, PhoneCodeExpiredError,
-    SessionPasswordNeededError, PasswordHashInvalidError, FloodWaitError
+    SessionPasswordNeededError, PasswordHashInvalidError, FloodWaitError,
+    AccessTokenInvalidError
 )
+
+BOT_TOKEN_RE = re.compile(r"^\d{5,15}:[A-Za-z0-9_-]{30,50}$")
 
 class GenError(Exception):
     def __init__(self, user_msg: str):
         super().__init__(user_msg)
         self.user_msg = user_msg
+
+def validate_bot_token(text: str) -> str:
+    t = text.strip()
+    if not BOT_TOKEN_RE.fullmatch(t):
+        raise GenError("❌ Invalid `BOT_TOKEN` format. Example: `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345`\nGet it from @BotFather → /newbot")
+    return t
 
 async def create_client(api_id: int, api_hash: str) -> TelegramClient:
     c = TelegramClient(StringSession(), api_id, api_hash)
@@ -60,6 +69,17 @@ async def sign_in(client: TelegramClient, phone: str, phone_code_hash: str, otp:
         raise GenError(f"🚦 FloodWait: retry in {e.seconds}s.")
     except Exception as e:
         raise GenError(f"❌ Sign-in failed: `{e}`")
+
+async def sign_in_bot(client: TelegramClient, bot_token: str) -> bool:
+    try:
+        await client.sign_in(bot_token=bot_token)
+        return True
+    except (AccessTokenInvalidError, ApiIdInvalidError):
+        raise GenError("❌ Invalid `BOT_TOKEN` or `API_ID`/`API_HASH`. Check @BotFather & my.telegram.org")
+    except FloodWaitError as e:
+        raise GenError(f"🚦 FloodWait: retry in {e.seconds}s.")
+    except Exception as e:
+        raise GenError(f"❌ Bot sign-in failed: `{e}`")
 
 async def check_password(client: TelegramClient, password: str):
     try:

@@ -6,8 +6,9 @@ from pyrogram.enums import ParseMode
 
 from .. import config
 from ..strings import (
-    STEP_API_ID, STEP_API_HASH, STEP_PHONE, STEP_OTP, STEP_2FA,
-    GENERATING_TEXT, SUCCESS_CAPTION, CANCEL_TEXT, TIMEOUT_TEXT, RATE_LIMIT_TEXT,
+    STEP_API_ID, STEP_API_HASH, STEP_API_ID_BOT, STEP_API_HASH_BOT, STEP_BOT_TOKEN,
+    STEP_PHONE, STEP_OTP, STEP_2FA,
+    GENERATING_TEXT, SUCCESS_CAPTION, SUCCESS_CAPTION_BOT, CANCEL_TEXT, TIMEOUT_TEXT, RATE_LIMIT_TEXT,
     kb_cancel_only, kb_start, kb_after_gen, kb_choose_lib
 )
 from ..fsm import (
@@ -50,9 +51,10 @@ async def cmd_generate(bot: Client, msg: Message):
         await msg.reply_text(RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT))
         return
     await msg.reply_text(
-        "**🔑 Choose library**\n\n"
-        "• **Pyrogram v2** — Pyrogram userbots\n"
-        "• **Telethon** — Telethon userbots",
+        "**🔑 Choose Generation Mode & Library**\n\n"
+        "• **👤 User Session:** For user accounts (Phone + OTP + 2FA)\n"
+        "• **🤖 Bot Token Session:** For bots via BotFather token (Instant)\n\n"
+        "Strings are **not** interchangeable between Pyrogram and Telethon.",
         reply_markup=kb_choose_lib()
     )
 
@@ -69,16 +71,11 @@ async def _ask(bot: Client, chat_id: int, user_id: int, prompt: str, timeout: in
     sent = await bot.send_message(chat_id, prompt, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
     text = await wait_for_text(user_id, timeout=timeout)
     if text is None:
-        # timeout or cancelled
-        # check if cancelled vs timeout — waiter popped either way
-        # we can't distinguish; show timeout text if still no waiter
         try:
             await sent.edit_text(TIMEOUT_TEXT.format(sec=timeout), reply_markup=kb_start())
         except Exception:
             pass
         return None
-    # Got text — try delete the user's reply if sensitive (phone/otp/password)
-    # Deletion done by caller based on step; we keep generic
     return text
 
 async def _try_delete(bot: Client, chat_id: int, msg_id: int):
@@ -87,10 +84,10 @@ async def _try_delete(bot: Client, chat_id: int, msg_id: int):
     except Exception:
         pass
 
-async def start_wizard(bot: Client, query: CallbackQuery, lib: str):
+async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = "user"):
     """
-    Entry from callback gen:pyro / gen:tele.
-    Runs the full wizard in the callback's chat.
+    Entry from callback.
+    Runs the full wizard in the callback's chat for user account or bot token session.
     """
     user_id = query.from_user.id
     chat_id = query.message.chat.id
@@ -107,9 +104,12 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str):
             await query.message.edit_text(RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT), reply_markup=kb_start())
             return
 
+        step1_prompt = STEP_API_ID_BOT if mode == "bot" else STEP_API_ID
+        step2_prompt = STEP_API_HASH_BOT if mode == "bot" else STEP_API_HASH
+
         # Edit chooser -> step 1 (set waiter then wait)
         try:
-            await query.message.edit_text(STEP_API_ID, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
+            await query.message.edit_text(step1_prompt, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
         except Exception:
             pass
 
@@ -130,7 +130,7 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str):
                 api_id = P.validate_api_id(t)
                 break
             except P.GenError as e:
-                t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{STEP_API_ID}", config.SESSION_TIMEOUT)
+                t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{step1_prompt}", config.SESSION_TIMEOUT)
                 if t is None:
                     return
         if api_id is None:
@@ -138,7 +138,7 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str):
             return
 
         # ---- Step 2: API_HASH ----
-        api_hash_text = await _ask(bot, chat_id, user_id, STEP_API_HASH, config.SESSION_TIMEOUT)
+        api_hash_text = await _ask(bot, chat_id, user_id, step2_prompt, config.SESSION_TIMEOUT)
         if api_hash_text is None:
             return
         api_hash = None
@@ -148,14 +148,103 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str):
                 api_hash = P.validate_api_hash(t)
                 break
             except P.GenError as e:
-                t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{STEP_API_HASH}", config.SESSION_TIMEOUT)
+                t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{step2_prompt}", config.SESSION_TIMEOUT)
                 if t is None:
                     return
         if api_hash is None:
             await bot.send_message(chat_id, "❌ Too many invalid attempts.", reply_markup=kb_start())
             return
 
-        # ---- Step 3: Phone ----
+        # ---- If Bot Token Session Mode ----
+        if mode == "bot":
+            bot_token_text = await _ask(bot, chat_id, user_id, STEP_BOT_TOKEN, config.SESSION_TIMEOUT)
+            if bot_token_text is None:
+                return
+            bot_token = None
+            t = bot_token_text
+            for _ in range(3):
+                try:
+                    bot_token = P.validate_bot_token(t)
+                    break
+                except P.GenError as e:
+                    t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{STEP_BOT_TOKEN}", config.SESSION_TIMEOUT)
+                    if t is None:
+                        return
+            if bot_token is None:
+                await bot.send_message(chat_id, "❌ Too many invalid attempts. Send /start to retry.", reply_markup=kb_start())
+                return
+
+            # Purge the user's bot token message immediately
+            try:
+                async for m in bot.get_chat_history(chat_id, limit=5):
+                    if m.from_user and m.from_user.id == user_id and m.text and m.text.strip() == bot_token_text.strip():
+                        try:
+                            await m.delete()
+                        except Exception:
+                            pass
+                        break
+            except Exception:
+                pass
+
+            status = await bot.send_message(chat_id, GENERATING_TEXT)
+            client = None
+            try:
+                if lib == "pyrogram":
+                    client = await P.create_client(api_id, api_hash)
+                    await P.sign_in_bot(client, bot_token)
+                    session = await P.export_string(client)
+                    lib_label = "Pyrogram v2 (Bot)"
+                else:
+                    client = await T.create_client(api_id, api_hash)
+                    await T.sign_in_bot(client, bot_token)
+                    session = T.export_string(client)
+                    lib_label = "Telethon (Bot)"
+
+                record_attempt(user_id)
+                try:
+                    await status.delete()
+                except Exception:
+                    pass
+
+                caption = SUCCESS_CAPTION_BOT.format(lib=lib_label, session=session, sec=config.AUTO_DELETE_SECONDS)
+                sent = await bot.send_message(
+                    chat_id,
+                    caption,
+                    reply_markup=kb_after_gen(),
+                    disable_web_page_preview=True
+                )
+
+                async def _autoburn_bot():
+                    await asyncio.sleep(config.AUTO_DELETE_SECONDS)
+                    try:
+                        await sent.delete()
+                    except Exception:
+                        pass
+                    try:
+                        await bot.send_message(chat_id, "🗑️ Previous bot session message auto-deleted for security.", reply_markup=kb_start())
+                    except Exception:
+                        pass
+                asyncio.create_task(_autoburn_bot())
+
+            except (P.GenError, T.GenError) as e:
+                try:
+                    await status.edit_text(e.user_msg, reply_markup=kb_start())
+                except Exception:
+                    await bot.send_message(chat_id, e.user_msg, reply_markup=kb_start())
+            except Exception as e:
+                try:
+                    await status.edit_text(f"❌ Bot session generation failed: `{e}`", reply_markup=kb_start())
+                except Exception:
+                    pass
+            finally:
+                if client:
+                    if lib == "pyrogram":
+                        await P.safe_disconnect(client)
+                    else:
+                        await T.safe_disconnect(client)
+            return
+
+        # ---- Step 3: Phone (User Session Mode) ----
         phone_text = await _ask(bot, chat_id, user_id, STEP_PHONE, config.SESSION_TIMEOUT)
         if phone_text is None:
             return

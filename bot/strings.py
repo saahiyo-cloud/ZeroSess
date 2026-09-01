@@ -81,8 +81,10 @@ def kb_start():
 
 def kb_choose_lib():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔥 Pyrogram v2", callback_data="gen:pyro")],
-        [InlineKeyboardButton("⚡ Telethon", callback_data="gen:tele")],
+        [InlineKeyboardButton("👤 Pyrogram v2 (User)", callback_data="gen:user:pyro"),
+         InlineKeyboardButton("👤 Telethon (User)", callback_data="gen:user:tele")],
+        [InlineKeyboardButton("🤖 Pyrogram v2 (Bot)", callback_data="gen:bot:pyro"),
+         InlineKeyboardButton("🤖 Telethon (Bot)", callback_data="gen:bot:tele")],
         [InlineKeyboardButton("⬅️ Back", callback_data="menu:start"),
          InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")],
     ])
@@ -132,7 +134,7 @@ Send your **API_ID** from https://my.telegram.org
 
 • Tap **API development tools**
 • Example: `1234567`
-• Only numbers, 5-8 digits
+• Only numbers, 5-10 digits
 
 Type `/cancel` to abort.
 """
@@ -143,6 +145,39 @@ Send your **API_HASH** (32 hex characters)
 
 • Example: `abc123def456...` (32 chars)
 • Found next to API_ID on my.telegram.org
+
+Type `/cancel` to abort.
+"""
+
+STEP_API_ID_BOT = """**Step 1/3 — API_ID** 📋
+
+Send your **API_ID** from https://my.telegram.org
+
+• Tap **API development tools**
+• Example: `1234567`
+• Only numbers, 5-10 digits
+
+Type `/cancel` to abort.
+"""
+
+STEP_API_HASH_BOT = """**Step 2/3 — API_HASH** 🔑
+
+Send your **API_HASH** (32 hex characters)
+
+• Example: `abc123def456...` (32 chars)
+• Found next to API_ID on my.telegram.org
+
+Type `/cancel` to abort.
+"""
+
+STEP_BOT_TOKEN = """**Step 3/3 — Bot Token** 🤖
+
+Send your **BOT_TOKEN** from https://t.me/BotFather
+
+• Example: `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345`
+• Created via `/newbot` or `/token` on @BotFather
+
+⚠️ Token message will be deleted instantly after use and never logged.
 
 Type `/cancel` to abort.
 """
@@ -192,6 +227,17 @@ SUCCESS_CAPTION = """✅ **Session Generated — {lib}**
 • Revoke via Telegram → Settings → Devices if leaked
 
 📨 Also sent to your **Saved Messages** for safekeeping.
+
+`{session}`
+
+_Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now._
+"""
+
+SUCCESS_CAPTION_BOT = """✅ **Bot Token Session Generated — {lib}**
+
+⚠️ **SECURITY WARNING**
+• This session string grants MTProto API access as your bot
+• Keep it secret and never commit to public repositories
 
 `{session}`
 

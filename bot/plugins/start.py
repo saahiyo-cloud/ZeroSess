@@ -100,19 +100,21 @@ async def cb_handler(bot: Client, q: CallbackQuery):
             await q.answer(RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT), show_alert=True)
             return
         await q.message.edit_text(
-            "**🔑 Choose library**\n\n"
-            "• **Pyrogram v2** — for Pyrogram userbots (most common)\n"
-            "• **Telethon** — for Telethon userbots\n\n"
-            "Strings are **not** interchangeable.",
+            "**🔑 Choose Generation Mode & Library**\n\n"
+            "• **👤 User Session:** For user accounts (Phone + OTP + 2FA)\n"
+            "• **🤖 Bot Token Session:** For bots via BotFather token (Instant)\n\n"
+            "Strings are **not** interchangeable between Pyrogram and Telethon.",
             reply_markup=kb_choose_lib()
         )
-    elif data in ("gen:pyro", "gen:tele"):
-        # Delegate to generate plugin — we trigger wizard via message injection trick:
-        # Call the wizard entry directly to avoid duplicate ask flow.
-        # Import lazily to avoid circular.
+    elif data in ("gen:user:pyro", "gen:user:tele", "gen:bot:pyro", "gen:bot:tele", "gen:pyro", "gen:tele"):
         from .generate import start_wizard
-        lib = "pyrogram" if data == "gen:pyro" else "telethon"
-        await start_wizard(bot, q, lib)
+        if data in ("gen:bot:pyro", "gen:bot:tele"):
+            mode = "bot"
+            lib = "pyrogram" if data == "gen:bot:pyro" else "telethon"
+        else:
+            mode = "user"
+            lib = "pyrogram" if data in ("gen:user:pyro", "gen:pyro") else "telethon"
+        await start_wizard(bot, q, lib=lib, mode=mode)
     elif data == "menu:cancel":
         from ..fsm import cancel_waiter
         cancel_waiter(q.from_user.id)

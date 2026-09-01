@@ -21,10 +21,13 @@
 
 ## ✨ Key Features
 
-- 🧙‍♂️ **Interactive Wizard UI:** Clean Step 1/5 progress with `Cancel` button on every step and `/cancel` anytime.
+- 🧙‍♂️ **Interactive Wizard UI:** Clean Step 1/5 (User) and Step 1/3 (Bot) progress with `Cancel` on every step.
+- 🤖 **Dual Mode Support:**
+  - **👤 User Account Sessions:** Pyrogram v2 & Telethon (Phone + OTP + 2FA support).
+  - **🤖 Bot Token Sessions:** Instant MTProto session generation using BotFather token (No OTP needed).
 - 🛡️ **Zero PII Logging & In-Memory:** No `.session` or `.sqlite` files written to disk. Pure ephemeral memory.
-- 🔥 **Auto-Burn & Ephemeral Output:** Sensitive inputs (phone, OTP, 2FA password) are immediately purged. Final session messages auto-delete after 5 minutes (configurable) with an instant `🗑️ Delete Now` button.
-- 🔐 **Saved Messages Delivery:** Sends the generated session string directly to your account's **Saved Messages** for security.
+- 🔥 **Auto-Burn & Ephemeral Output:** Sensitive inputs (phone, OTP, 2FA password, bot tokens) are immediately purged. Final session messages auto-delete after 5 minutes (configurable) with an instant `🗑️ Delete Now` button.
+- 🔐 **Saved Messages Delivery:** Sends user session strings directly to your account's **Saved Messages** for safekeeping.
 - 🚦 **Smart Rate Limiting:** Built-in sliding-window rate limiter per user to prevent FloodWait and abuse.
 - ⚡ **Native Async FSM:** Built using native `pyrogram` filters & `asyncio.Future` — zero memory leaks and no fragile global state.
 - 📱 **2FA & FloodWait Handling:** Gracefully handles Two-Factor Authentication passwords and formatted FloodWait recovery timers.
@@ -83,16 +86,21 @@ Deploy your own instance of ZeroSess in under 60 seconds:
 ## 📖 User Flow
 
 ```mermaid
-graph LR
-    A["/start"] --> B["Choose Library\n(Pyrogram / Telethon)"]
-    B --> C["Enter API_ID & API_HASH"]
-    C --> D["Enter Phone Number\n(+1234567890)"]
-    D --> E["Enter Telegram OTP\n(1 2 3 4 5)"]
+graph TD
+    A["/start or /generate"] --> B{"Choose Mode"}
+    B -->|👤 User Session| C["Enter API_ID & API_HASH"]
+    C --> D["Enter Phone (+1234567890)"]
+    D --> E["Enter OTP (1 2 3 4 5)"]
     E --> F{"2FA Enabled?"}
     F -- Yes --> G["Enter 2FA Password"]
-    F -- No --> H["Generate Session String"]
+    F -- No --> H["Generate User Session"]
     G --> H
     H --> I["Sent to Saved Messages\n+ Ephemeral Copy (Auto-burn)"]
+
+    B -->|🤖 Bot Token Session| J["Enter API_ID & API_HASH"]
+    J --> K["Enter BOT_TOKEN (from @BotFather)"]
+    K --> L["Instant MTProto Bot Auth"]
+    L --> M["Output Bot Session String (Auto-burn)"]
 ```
 
 ---

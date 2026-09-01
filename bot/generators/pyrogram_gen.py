@@ -34,6 +34,14 @@ def validate_phone(text: str) -> str:
         raise GenError("❌ Invalid phone. Use international format: `+919876543210`\nInclude `+` and country code.")
     return t
 
+BOT_TOKEN_RE = re.compile(r"^\d{5,15}:[A-Za-z0-9_-]{30,50}$")
+
+def validate_bot_token(text: str) -> str:
+    t = text.strip()
+    if not BOT_TOKEN_RE.fullmatch(t):
+        raise GenError("❌ Invalid `BOT_TOKEN` format. Example: `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345`\nGet it from @BotFather → /newbot")
+    return t
+
 def normalize_otp(text: str) -> str:
     # accepts "1 2 3 4 5" / "1-2-3-4-5" / "12345"
     t = re.sub(r"[^0-9]", "", text.strip())
@@ -109,6 +117,19 @@ async def sign_in(client: Client, phone: str, phone_code_hash: str, otp: str) ->
         raise GenError(f"🚦 FloodWait: retry in {e.value}s.")
     except Exception as e:
         raise GenError(f"❌ Sign-in failed: `{e}`")
+
+async def sign_in_bot(client: Client, bot_token: str) -> bool:
+    try:
+        await client.sign_in_bot(bot_token)
+        return True
+    except AccessTokenInvalid:
+        raise GenError("❌ Invalid `BOT_TOKEN`. Double-check the token received from @BotFather.")
+    except ApiIdInvalid:
+        raise GenError("❌ Invalid API_ID/API_HASH combination for this bot token.")
+    except FloodWait as e:
+        raise GenError(f"🚦 FloodWait: retry in {e.value}s.")
+    except Exception as e:
+        raise GenError(f"❌ Bot sign-in failed: `{e}`")
 
 async def check_password(client: Client, password: str):
     try:
