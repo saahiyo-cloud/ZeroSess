@@ -1,13 +1,16 @@
+import time
 import asyncio
 import re
 from pyrogram import Client, filters
 from pyrogram.types import Message, CallbackQuery
 from pyrogram.enums import ParseMode
+from pyrogram.errors import SessionPasswordNeeded
 
 from .. import config
 from ..strings import (
-    STEP_API_ID, STEP_API_HASH, STEP_API_ID_BOT, STEP_API_HASH_BOT, STEP_BOT_TOKEN,
-    STEP_PHONE, STEP_OTP, STEP_2FA,
+    STEP_API_ID, STEP_API_HASH, STEP_API_ID_BOT, STEP_API_HASH_BOT,
+    STEP_API_ID_QR, STEP_API_HASH_QR, STEP_BOT_TOKEN,
+    STEP_PHONE, STEP_OTP, STEP_2FA, QR_PROMPT,
     GENERATING_TEXT, SUCCESS_CAPTION, SUCCESS_CAPTION_BOT, CANCEL_TEXT, TIMEOUT_TEXT, RATE_LIMIT_TEXT,
     kb_cancel_only, kb_start, kb_after_gen, kb_choose_lib, kb_step_api_id
 )
@@ -18,6 +21,7 @@ from ..fsm import (
 from .. import database as db
 from ..generators import pyrogram_gen as P
 from ..generators import telethon_gen as T
+from ..generators.qr_helper import generate_qr_image, export_pyrogram_qr, check_pyrogram_qr, QRError
 from telethon.errors import SessionPasswordNeededError
 
 # Global message handler to fulfill waiters
@@ -62,8 +66,9 @@ async def cmd_generate(bot: Client, msg: Message):
         pass
     await msg.reply_text(
         "🔑 **Choose Library & Mode**\n\n"
-        "• **User:** User account (Phone + OTP)\n"
-        "• **Bot:** Bot token (@BotFather)\n\n"
+        "• **📷 QR Login:** Scan with Telegram app\n"
+        "• **👤 Phone OTP:** Phone + OTP code\n"
+        "• **🤖 Bot Token:** BotFather token\n\n"
         "Select an option below:",
         reply_markup=kb_choose_lib()
     )
@@ -103,7 +108,7 @@ async def _ask(bot: Client, chat_id: int, user_id: int, prompt: str, timeout: in
 async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = "user"):
     """
     Entry from callback.
-    Runs the full wizard in the callback's chat for user account or bot token session.
+    Runs the full wizard in the callback's chat for user account, bot token, or QR login session.
     """
     user_id = query.from_user.id
     chat_id = query.message.chat.id
@@ -121,8 +126,15 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = 
             await _edit_or_send(bot, chat_id, msg, RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT), reply_markup=kb_start())
             return
 
-        step1_prompt = STEP_API_ID_BOT if mode == "bot" else STEP_API_ID
-        step2_prompt = STEP_API_HASH_BOT if mode == "bot" else STEP_API_HASH
+        if mode == "bot":
+            step1_prompt = STEP_API_ID_BOT
+            step2_prompt = STEP_API_HASH_BOT
+        elif mode == "qr":
+            step1_prompt = STEP_API_ID_QR
+            step2_prompt = STEP_API_HASH_QR
+        else:
+            step1_prompt = STEP_API_ID
+            step2_prompt = STEP_API_HASH
 
         # Step 1: Edit into Step 1
         msg = await _edit_or_send(bot, chat_id, msg, step1_prompt, kb_step_api_id())
@@ -174,6 +186,203 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = 
                 if api_hash is None:
                     await _edit_or_send(bot, chat_id, msg, "❌ Too many invalid attempts.", reply_markup=kb_start())
                     return
+
+        # ---- If QR Login Mode ----
+        if mode == "qr":
+            lib_label = "Pyrogram v2" if lib == "pyrogram" else "Telethon"
+            msg = await _edit_or_send(bot, chat_id, msg, "⏳ **Initializing QR Login…**", None)
+            client = None
+            qr_msg = None
+            try:
+                if lib == "pyrogram":
+                    client = await P.create_client(api_id, api_hash)
+                    url, expires_at = await export_pyrogram_qr(client, api_id, api_hash)
+                    if not url:
+                        raise QRError("❌ Could not generate QR token.")
+                    qr_buf = generate_qr_image(url)
+                    try:
+                        await msg.delete()
+                    except Exception:
+                        pass
+                    qr_msg = await bot.send_photo(
+                        chat_id,
+                        photo=qr_buf,
+                        caption=QR_PROMPT.format(lib=lib_label),
+                        reply_markup=kb_cancel_only()
+                    )
+
+                    scanned = False
+                    needs_2fa = False
+                    start_t = time.time()
+                    while time.time() - start_t < 120:
+                        await asyncio.sleep(2.5)
+                        try:
+                            if await check_pyrogram_qr(client, api_id, api_hash):
+                                scanned = True
+                                break
+                        except SessionPasswordNeeded:
+                            scanned = True
+                            needs_2fa = True
+                            break
+                        except Exception:
+                            pass
+                        # Refresh QR if expiring
+                        if time.time() >= expires_at - 2:
+                            try:
+                                url, expires_at = await export_pyrogram_qr(client, api_id, api_hash)
+                                if url:
+                                    qr_buf = generate_qr_image(url)
+                                    try:
+                                        await qr_msg.delete()
+                                    except Exception:
+                                        pass
+                                    qr_msg = await bot.send_photo(
+                                        chat_id,
+                                        photo=qr_buf,
+                                        caption=QR_PROMPT.format(lib=lib_label),
+                                        reply_markup=kb_cancel_only()
+                                    )
+                            except Exception:
+                                pass
+                else:
+                    # Telethon QR Login
+                    client = await T.create_client(api_id, api_hash)
+                    qr_login = await client.qr_login()
+                    qr_buf = generate_qr_image(qr_login.url)
+                    try:
+                        await msg.delete()
+                    except Exception:
+                        pass
+                    qr_msg = await bot.send_photo(
+                        chat_id,
+                        photo=qr_buf,
+                        caption=QR_PROMPT.format(lib=lib_label),
+                        reply_markup=kb_cancel_only()
+                    )
+
+                    scanned = False
+                    needs_2fa = False
+                    start_t = time.time()
+                    while time.time() - start_t < 120:
+                        try:
+                            await qr_login.wait(timeout=15)
+                            scanned = True
+                            break
+                        except asyncio.TimeoutError:
+                            try:
+                                await qr_login.recreate()
+                                qr_buf = generate_qr_image(qr_login.url)
+                                try:
+                                    await qr_msg.delete()
+                                except Exception:
+                                    pass
+                                qr_msg = await bot.send_photo(
+                                    chat_id,
+                                    photo=qr_buf,
+                                    caption=QR_PROMPT.format(lib=lib_label),
+                                    reply_markup=kb_cancel_only()
+                                )
+                            except Exception:
+                                pass
+                        except SessionPasswordNeededError:
+                            scanned = True
+                            needs_2fa = True
+                            break
+
+                if qr_msg:
+                    try:
+                        await qr_msg.delete()
+                    except Exception:
+                        pass
+
+                if not scanned:
+                    await bot.send_message(chat_id, "⏰ QR Login expired. Send /generate to retry.", reply_markup=kb_start())
+                    if client:
+                        if lib == "pyrogram":
+                            await P.safe_disconnect(client)
+                        else:
+                            await T.safe_disconnect(client)
+                    return
+
+                # If 2FA password needed
+                if needs_2fa:
+                    pwd_text, msg = await _ask(bot, chat_id, user_id, STEP_2FA, config.SESSION_TIMEOUT, active_msg=None)
+                    if pwd_text is None:
+                        if lib == "pyrogram":
+                            await P.safe_disconnect(client)
+                        else:
+                            await T.safe_disconnect(client)
+                        return
+                    pwd = pwd_text.strip()
+                    msg = await _edit_or_send(bot, chat_id, msg, "🔐 Checking password…", None)
+                    try:
+                        if lib == "pyrogram":
+                            await P.check_password(client, pwd)
+                        else:
+                            await T.check_password(client, pwd)
+                    except (P.GenError, T.GenError) as e:
+                        await _edit_or_send(bot, chat_id, msg, e.user_msg, reply_markup=kb_start())
+                        if lib == "pyrogram":
+                            await P.safe_disconnect(client)
+                        else:
+                            await T.safe_disconnect(client)
+                        return
+
+                # Export string
+                msg = await bot.send_message(chat_id, "📦 Exporting session string…")
+                if lib == "pyrogram":
+                    session = await P.export_string(client)
+                    text_for_saved = f"✅ Your {lib_label} session string:\n\n`{session}`\n\n⚠️ Keep it secret!"
+                    await P.send_to_saved(client, text_for_saved)
+                else:
+                    session = T.export_string(client)
+                    text_for_saved = f"✅ Your {lib_label} session string:\n\n`{session}`\n\n⚠️ Keep it secret!"
+                    await T.send_to_saved(client, text_for_saved)
+
+                record_attempt(user_id)
+                asyncio.create_task(db.increment_metric("sessions_generated"))
+                if lib == "pyrogram":
+                    asyncio.create_task(db.increment_metric("sessions_pyro"))
+                else:
+                    asyncio.create_task(db.increment_metric("sessions_tele"))
+
+                caption = SUCCESS_CAPTION.format(lib=lib_label, session=session, sec=config.AUTO_DELETE_SECONDS)
+                sent = await _edit_or_send(bot, chat_id, msg, caption, reply_markup=kb_after_gen())
+
+                async def _autoburn_qr():
+                    await asyncio.sleep(config.AUTO_DELETE_SECONDS)
+                    try:
+                        await sent.delete()
+                    except Exception:
+                        pass
+                    try:
+                        await bot.send_message(chat_id, "🗑️ Previous session message auto-deleted for security.", reply_markup=kb_start())
+                    except Exception:
+                        pass
+                asyncio.create_task(_autoburn_qr())
+
+            except (P.GenError, T.GenError, QRError) as e:
+                if qr_msg:
+                    try:
+                        await qr_msg.delete()
+                    except Exception:
+                        pass
+                user_msg = getattr(e, "user_msg", str(e))
+                await bot.send_message(chat_id, user_msg, reply_markup=kb_start())
+            except Exception as e:
+                if qr_msg:
+                    try:
+                        await qr_msg.delete()
+                    except Exception:
+                        pass
+                await bot.send_message(chat_id, f"❌ QR Login failed: `{e}`", reply_markup=kb_start())
+            finally:
+                if client:
+                    if lib == "pyrogram":
+                        await P.safe_disconnect(client)
+                    else:
+                        await T.safe_disconnect(client)
+            return
 
         # ---- If Bot Token Session Mode ----
         if mode == "bot":

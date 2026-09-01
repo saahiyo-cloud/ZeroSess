@@ -14,9 +14,9 @@ Generate **Pyrogram v2** & **Telethon** strings securely in seconds.
 
 HELP_TEXT = """📖 **Quick Guide**
 
-1️⃣ **Choose Library:** Pyrogram v2 or Telethon
+1️⃣ **Choose Library & Mode:** QR Login, Phone OTP, or Bot Token
 2️⃣ **API Details:** Use default or your own from my.telegram.org
-3️⃣ **Login:** Phone → OTP (with spaces: `1 2 3 4 5`)
+3️⃣ **Login:** Scan QR or enter Phone → OTP
 4️⃣ **Receive:** Saved Messages + ephemeral copy
 
 **Commands:**
@@ -60,10 +60,12 @@ def kb_start():
 
 def kb_choose_lib():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("👤 Pyrogram (User)", callback_data="gen:user:pyro"),
-         InlineKeyboardButton("👤 Telethon (User)", callback_data="gen:user:tele")],
-        [InlineKeyboardButton("🤖 Pyrogram (Bot)", callback_data="gen:bot:pyro"),
-         InlineKeyboardButton("🤖 Telethon (Bot)", callback_data="gen:bot:tele")],
+        [InlineKeyboardButton("📷 QR Login (Pyrogram)", callback_data="gen:qr:pyro"),
+         InlineKeyboardButton("📷 QR Login (Telethon)", callback_data="gen:qr:tele")],
+        [InlineKeyboardButton("👤 Phone OTP (Pyrogram)", callback_data="gen:user:pyro"),
+         InlineKeyboardButton("👤 Phone OTP (Telethon)", callback_data="gen:user:tele")],
+        [InlineKeyboardButton("🤖 Bot Token (Pyrogram)", callback_data="gen:bot:pyro"),
+         InlineKeyboardButton("🤖 Bot Token (Telethon)", callback_data="gen:bot:tele")],
         [InlineKeyboardButton("⬅️ Back", callback_data="menu:start"),
          InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")],
     ])
@@ -130,6 +132,17 @@ STEP_API_HASH = """🔑 **Step 2/5 — API HASH**
 Send your **API_HASH** (32 hex characters):
 """
 
+STEP_API_ID_QR = """📋 **Step 1/2 — API ID**
+
+Send your **API_ID** from https://my.telegram.org
+Or tap **⚡ Use Default API** below to skip.
+"""
+
+STEP_API_HASH_QR = """🔑 **Step 2/2 — API HASH**
+
+Send your **API_HASH** (32 hex characters):
+"""
+
 STEP_API_ID_BOT = """📋 **Step 1/3 — API ID**
 
 Send your **API_ID** from https://my.telegram.org
@@ -161,6 +174,15 @@ Enter the code sent by Telegram.
 STEP_2FA = """🔐 **Step 5/5 — 2FA Password**
 
 Your account has 2FA enabled. Send your **password**:
+"""
+
+QR_PROMPT = """📷 **Scan QR Code to Login — {lib}**
+
+1. Open **Telegram → Settings → Devices**
+2. Tap **Link Desktop Device**
+3. Scan this QR code with your camera
+
+⏱ Auto-refreshing every ~30s...
 """
 
 GENERATING_TEXT = "⏳ **Generating session…**"

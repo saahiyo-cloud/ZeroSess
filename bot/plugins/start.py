@@ -151,9 +151,17 @@ async def cb_handler(bot: Client, q: CallbackQuery):
             "Select an option below:",
             reply_markup=kb_choose_lib()
         )
-    elif data in ("gen:user:pyro", "gen:user:tele", "gen:bot:pyro", "gen:bot:tele", "gen:pyro", "gen:tele"):
+    elif data in (
+        "gen:qr:pyro", "gen:qr:tele",
+        "gen:user:pyro", "gen:user:tele",
+        "gen:bot:pyro", "gen:bot:tele",
+        "gen:pyro", "gen:tele"
+    ):
         from .generate import start_wizard
-        if data in ("gen:bot:pyro", "gen:bot:tele"):
+        if data in ("gen:qr:pyro", "gen:qr:tele"):
+            mode = "qr"
+            lib = "pyrogram" if data == "gen:qr:pyro" else "telethon"
+        elif data in ("gen:bot:pyro", "gen:bot:tele"):
             mode = "bot"
             lib = "pyrogram" if data == "gen:bot:pyro" else "telethon"
         else:
