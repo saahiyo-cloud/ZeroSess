@@ -11,10 +11,26 @@ from ..fsm import get_lock, wait_for_text, is_rate_limited
 from ..generators.checker import inspect_session
 from .. import database as db
 
+async def _edit_or_send(bot: Client, chat_id: int, active_msg: Message | None, text: str, reply_markup=None) -> Message:
+    if active_msg:
+        try:
+            await active_msg.edit_text(text, reply_markup=reply_markup, disable_web_page_preview=True)
+            return active_msg
+        except Exception:
+            try:
+                await active_msg.delete()
+            except Exception:
+                pass
+    return await bot.send_message(chat_id, text, reply_markup=reply_markup, disable_web_page_preview=True)
+
 @Client.on_message(filters.command(["check", "validate", "checksession"]))
 async def cmd_check(bot: Client, msg: Message):
     user_id = msg.from_user.id
     chat_id = msg.chat.id
+    try:
+        await msg.delete()
+    except Exception:
+        pass
     await run_check_flow(bot, chat_id, user_id)
 
 async def handle_check_callback(bot: Client, query: CallbackQuery):
@@ -37,51 +53,27 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
         if limited:
             mins = max(1, retry // 60)
             from ..strings import RATE_LIMIT_TEXT
-            await bot.send_message(
+            await _edit_or_send(
+                bot,
                 chat_id,
+                callback_msg,
                 RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT),
                 reply_markup=kb_start()
             )
             return
 
-        if callback_msg:
-            try:
-                sent = await callback_msg.edit_text(CHECK_PROMPT, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
-            except Exception:
-                sent = await bot.send_message(chat_id, CHECK_PROMPT, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
-        else:
-            sent = await bot.send_message(chat_id, CHECK_PROMPT, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
+        msg = await _edit_or_send(bot, chat_id, callback_msg, CHECK_PROMPT, reply_markup=kb_cancel_only())
 
         session_text = await wait_for_text(user_id, timeout=config.SESSION_TIMEOUT)
         if session_text is None:
-            try:
-                await sent.edit_text(TIMEOUT_TEXT.format(sec=config.SESSION_TIMEOUT), reply_markup=kb_start())
-            except Exception:
-                pass
+            await _edit_or_send(bot, chat_id, msg, TIMEOUT_TEXT.format(sec=config.SESSION_TIMEOUT), reply_markup=kb_start())
             return
 
         session_str = session_text.strip()
-
-        # Immediate purge of user input containing sensitive session string
-        try:
-            async for m in bot.get_chat_history(chat_id, limit=5):
-                if m.from_user and m.from_user.id == user_id and m.text and m.text.strip() == session_str:
-                    try:
-                        await m.delete()
-                    except Exception:
-                        pass
-                    break
-        except Exception:
-            pass
-
-        inspect_msg = await bot.send_message(chat_id, "🔍 **Inspecting session string in-memory…**")
+        msg = await _edit_or_send(bot, chat_id, msg, "🔍 **Inspecting session string in-memory…**", None)
 
         try:
             result = await inspect_session(session_str)
-            try:
-                await inspect_msg.delete()
-            except Exception:
-                pass
 
             if result.get("valid"):
                 asyncio.create_task(db.increment_metric("sessions_checked"))
@@ -112,11 +104,12 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
                     admin_list=admin_list,
                     sec=config.AUTO_DELETE_SECONDS
                 )
-                sent_result = await bot.send_message(
+                sent_result = await _edit_or_send(
+                    bot,
                     chat_id,
+                    msg,
                     text,
-                    reply_markup=kb_after_check(),
-                    disable_web_page_preview=True
+                    reply_markup=kb_after_check()
                 )
 
                 # Auto-burn inspection result
@@ -131,15 +124,13 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
             else:
                 reason = result.get("reason", "Unknown error")
                 text = CHECK_INVALID_TEXT.format(reason=reason)
-                await bot.send_message(
+                await _edit_or_send(
+                    bot,
                     chat_id,
+                    msg,
                     text,
-                    reply_markup=kb_start(),
-                    disable_web_page_preview=True
+                    reply_markup=kb_start()
                 )
 
         except Exception as e:
-            try:
-                await inspect_msg.edit_text(f"❌ Inspection failed: `{e}`", reply_markup=kb_start())
-            except Exception:
-                pass
+            await _edit_or_send(bot, chat_id, msg, f"❌ Inspection failed: `{e}`", reply_markup=kb_start())
