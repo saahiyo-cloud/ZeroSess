@@ -89,6 +89,7 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
                     name=result["name"],
                     user_id=result["user_id"],
                     username=result["username"],
+                    spambot=result.get("spambot_status", "🟢 Clean (No limits applied)"),
                     dc_id=result["dc_id"],
                     dc_location=result["dc_location"],
                     is_premium=result["is_premium"],

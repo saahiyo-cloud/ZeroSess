@@ -20,9 +20,66 @@ DC_LOCATIONS = {
     5: "Singapore",
 }
 
+async def check_pyrogram_spambot(client: Client, is_bot: bool) -> str:
+    """Queries @SpamBot to check if the user account is restricted or spamblocked."""
+    if is_bot:
+        return "ℹ️ N/A (Bot Account)"
+    try:
+        me = await client.get_me()
+        if getattr(me, "is_restricted", False):
+            restrictions = getattr(me, "restriction_reason", [])
+            reasons = ", ".join([getattr(r, "text", str(r)) for r in restrictions]) if restrictions else "Account is restricted"
+            return f"🔴 Restricted ({reasons})"
+
+        # Query @SpamBot
+        await client.send_message("SpamBot", "/start")
+        for _ in range(6):
+            await asyncio.sleep(0.5)
+            async for msg in client.get_chat_history("SpamBot", limit=1):
+                if msg.from_user and msg.from_user.is_bot and (msg.text or msg.caption):
+                    txt = (msg.text or msg.caption or "").lower()
+                    if "good news" in txt or "no limits" in txt or "free as a bird" in txt:
+                        return "🟢 Clean (No limits applied)"
+                    elif "unfortunately" in txt or "limit" in txt or "restricted" in txt or "spam" in txt:
+                        first_line = (msg.text or "").split("\n")[0][:50]
+                        return f"🔴 Restricted ({first_line})"
+        return "🟢 Clean (No limits applied)"
+    except Exception:
+        return "🟢 Clean (No limits applied)"
+
+async def check_telethon_spambot(client: TelegramClient, is_bot: bool) -> str:
+    """Queries @SpamBot in Telethon to check if user account is restricted."""
+    if is_bot:
+        return "ℹ️ N/A (Bot Account)"
+    try:
+        me = await client.get_me()
+        if getattr(me, "restricted", False):
+            restrictions = getattr(me, "restriction_reason", [])
+            reasons = ", ".join([getattr(r, "text", str(r)) for r in restrictions]) if restrictions else "Account is restricted"
+            return f"🔴 Restricted ({reasons})"
+
+        # Query @SpamBot
+        await client.send_message("SpamBot", "/start")
+        for _ in range(6):
+            await asyncio.sleep(0.5)
+            messages = await client.get_messages("SpamBot", limit=1)
+            if messages and len(messages) > 0:
+                msg = messages[0]
+                if not msg.out and (msg.text or msg.raw_text):
+                    txt = (msg.text or msg.raw_text or "").lower()
+                    if "good news" in txt or "no limits" in txt or "free as a bird" in txt:
+                        return "🟢 Clean (No limits applied)"
+                    elif "unfortunately" in txt or "limit" in txt or "restricted" in txt or "spam" in txt:
+                        first_line = (msg.text or "").split("\n")[0][:50]
+                        return f"🔴 Restricted ({first_line})"
+        return "🟢 Clean (No limits applied)"
+    except Exception:
+        return "🟢 Clean (No limits applied)"
+
 async def inspect_session(session_string: str) -> dict:
     """
     Validates and inspects an existing Pyrogram v2 or Telethon session string in-memory.
+    Checks account status, DC, Premium, and SpamBlock status.
     Returns a dict with details or failure reason.
     """
     session_string = session_string.strip()
@@ -49,6 +106,8 @@ async def inspect_session(session_string: str) -> dict:
             dc_id = getattr(client.storage, "dc_id", 0) if hasattr(client, "storage") else (getattr(me, "dc_id", 0) or 0)
             dc_name = DC_LOCATIONS.get(dc_id, "Unknown DC")
             acc_type = "🤖 Bot Account" if me.is_bot else "👤 User Account"
+            spambot_status = await check_pyrogram_spambot(client, me.is_bot)
+
             return {
                 "valid": True,
                 "lib": "Pyrogram v2",
@@ -58,6 +117,7 @@ async def inspect_session(session_string: str) -> dict:
                 "acc_type": acc_type,
                 "is_bot": me.is_bot,
                 "is_premium": "✨ Yes" if getattr(me, "is_premium", False) else "No",
+                "spambot_status": spambot_status,
                 "dc_id": dc_id or 0,
                 "dc_location": dc_name
             }
@@ -90,6 +150,8 @@ async def inspect_session(session_string: str) -> dict:
             is_bot = getattr(me, "bot", False)
             acc_type = "🤖 Bot Account" if is_bot else "👤 User Account"
             is_prem = getattr(me, "premium", False)
+            spambot_status = await check_telethon_spambot(t_client, is_bot)
+
             return {
                 "valid": True,
                 "lib": "Telethon",
@@ -99,6 +161,7 @@ async def inspect_session(session_string: str) -> dict:
                 "acc_type": acc_type,
                 "is_bot": is_bot,
                 "is_premium": "✨ Yes" if is_prem else "No",
+                "spambot_status": spambot_status,
                 "dc_id": dc_id or 0,
                 "dc_location": dc_name
             }
@@ -114,5 +177,5 @@ async def inspect_session(session_string: str) -> dict:
     except Exception as e:
         return {
             "valid": False,
-            "reason": f"Invalid session string format or unrecognized structure"
+            "reason": "Invalid session string format or unrecognized structure"
         }

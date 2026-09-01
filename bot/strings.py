@@ -260,6 +260,7 @@ Send any **Pyrogram v2** or **Telethon** session string to inspect its status.
 
 • Verifies if the session is currently active, expired, or revoked
 • Identifies account type (User / Bot), User ID, Name, Username
+• Checks @SpamBot restriction & limitation status
 • Checks connected Data Center (DC) and Premium status
 • 100% In-memory inspection — no credentials stored or logged
 
@@ -275,6 +276,7 @@ CHECK_ACTIVE_TEXT = """✅ **Session String Valid & Active**
 • **Name:** {name}
 • **Telegram ID:** `{user_id}`
 • **Username:** {username}
+• **SpamBlock Status:** {spambot}
 • **Data Center:** `DC {dc_id}` ({dc_location})
 • **Telegram Premium:** {is_premium}
 
