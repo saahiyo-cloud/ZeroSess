@@ -1,5 +1,6 @@
 import asyncio
 from pyrogram import Client
+from pyrogram.enums import ChatType
 from pyrogram.errors import (
     AuthKeyUnregistered, UserDeactivated, SessionRevoked,
     AuthKeyInvalid, AccessTokenInvalid, FloodWait, ApiIdInvalid
@@ -76,10 +77,98 @@ async def check_telethon_spambot(client: TelegramClient, is_bot: bool) -> str:
     except Exception:
         return "🟢 Clean (No limits applied)"
 
+async def scan_pyrogram_dialogs(client: Client, is_bot: bool) -> dict:
+    """Scans top 100 dialogs for channel and group ownership/admin privileges in Pyrogram."""
+    if is_bot:
+        return {
+            "total_dialogs": 0,
+            "owned_count": 0,
+            "owned_titles": [],
+            "admin_count": 0,
+            "admin_titles": []
+        }
+    try:
+        total = 0
+        owned = []
+        admin = []
+        async for dialog in client.get_dialogs(limit=100):
+            total += 1
+            chat = dialog.chat
+            if chat.type in (ChatType.CHANNEL, ChatType.SUPERGROUP, ChatType.GROUP):
+                title = chat.title or "Untitled"
+                if chat.username:
+                    title += f" (@{chat.username})"
+
+                # In Pyrogram, is_creator is available on chat model
+                if getattr(chat, "is_creator", False):
+                    owned.append(title)
+                elif getattr(chat, "admin_rights", None) or getattr(chat, "can_manage_topics", None):
+                    admin.append(title)
+
+        return {
+            "total_dialogs": total,
+            "owned_count": len(owned),
+            "owned_titles": owned[:5],
+            "admin_count": len(admin),
+            "admin_titles": admin[:5]
+        }
+    except Exception:
+        return {
+            "total_dialogs": 0,
+            "owned_count": 0,
+            "owned_titles": [],
+            "admin_count": 0,
+            "admin_titles": []
+        }
+
+async def scan_telethon_dialogs(client: TelegramClient, is_bot: bool) -> dict:
+    """Scans top 100 dialogs for channel and group ownership/admin privileges in Telethon."""
+    if is_bot:
+        return {
+            "total_dialogs": 0,
+            "owned_count": 0,
+            "owned_titles": [],
+            "admin_count": 0,
+            "admin_titles": []
+        }
+    try:
+        total = 0
+        owned = []
+        admin = []
+        async for dialog in client.iter_dialogs(limit=100):
+            total += 1
+            if dialog.is_channel or dialog.is_group:
+                entity = dialog.entity
+                title = dialog.name or "Untitled"
+                username = getattr(entity, "username", None)
+                if username:
+                    title += f" (@{username})"
+
+                if getattr(entity, "creator", False):
+                    owned.append(title)
+                elif getattr(entity, "admin_rights", None) is not None:
+                    admin.append(title)
+
+        return {
+            "total_dialogs": total,
+            "owned_count": len(owned),
+            "owned_titles": owned[:5],
+            "admin_count": len(admin),
+            "admin_titles": admin[:5]
+        }
+    except Exception:
+        return {
+            "total_dialogs": 0,
+            "owned_count": 0,
+            "owned_titles": [],
+            "admin_count": 0,
+            "admin_titles": []
+        }
+
 async def inspect_session(session_string: str) -> dict:
     """
     Validates and inspects an existing Pyrogram v2 or Telethon session string in-memory.
-    Checks account status, DC, Premium, and SpamBlock status.
+    Checks account status, DC, Premium, SpamBlock, and Admin/Ownership footprint.
     Returns a dict with details or failure reason.
     """
     session_string = session_string.strip()
@@ -107,6 +196,7 @@ async def inspect_session(session_string: str) -> dict:
             dc_name = DC_LOCATIONS.get(dc_id, "Unknown DC")
             acc_type = "🤖 Bot Account" if me.is_bot else "👤 User Account"
             spambot_status = await check_pyrogram_spambot(client, me.is_bot)
+            footprint = await scan_pyrogram_dialogs(client, me.is_bot)
 
             return {
                 "valid": True,
@@ -119,7 +209,8 @@ async def inspect_session(session_string: str) -> dict:
                 "is_premium": "✨ Yes" if getattr(me, "is_premium", False) else "No",
                 "spambot_status": spambot_status,
                 "dc_id": dc_id or 0,
-                "dc_location": dc_name
+                "dc_location": dc_name,
+                "footprint": footprint
             }
         finally:
             if client.is_connected:
@@ -151,6 +242,7 @@ async def inspect_session(session_string: str) -> dict:
             acc_type = "🤖 Bot Account" if is_bot else "👤 User Account"
             is_prem = getattr(me, "premium", False)
             spambot_status = await check_telethon_spambot(t_client, is_bot)
+            footprint = await scan_telethon_dialogs(t_client, is_bot)
 
             return {
                 "valid": True,
@@ -163,7 +255,8 @@ async def inspect_session(session_string: str) -> dict:
                 "is_premium": "✨ Yes" if is_prem else "No",
                 "spambot_status": spambot_status,
                 "dc_id": dc_id or 0,
-                "dc_location": dc_name
+                "dc_location": dc_name,
+                "footprint": footprint
             }
         finally:
             if t_client.is_connected():

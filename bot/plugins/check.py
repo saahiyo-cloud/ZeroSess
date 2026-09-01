@@ -83,6 +83,16 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
                 pass
 
             if result.get("valid"):
+                footprint = result.get("footprint", {})
+                total_dialogs = footprint.get("total_dialogs", 0)
+                owned_count = footprint.get("owned_count", 0)
+                owned_titles = footprint.get("owned_titles", [])
+                admin_count = footprint.get("admin_count", 0)
+                admin_titles = footprint.get("admin_titles", [])
+
+                owned_list = ("\n  └ " + "\n  └ ".join(owned_titles)) if owned_titles else ""
+                admin_list = ("\n  └ " + "\n  └ ".join(admin_titles)) if admin_titles else ""
+
                 text = CHECK_ACTIVE_TEXT.format(
                     lib=result["lib"],
                     acc_type=result["acc_type"],
@@ -93,6 +103,11 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
                     dc_id=result["dc_id"],
                     dc_location=result["dc_location"],
                     is_premium=result["is_premium"],
+                    total_dialogs=total_dialogs,
+                    owned_count=owned_count,
+                    owned_list=owned_list,
+                    admin_count=admin_count,
+                    admin_list=admin_list,
                     sec=config.AUTO_DELETE_SECONDS
                 )
                 sent_result = await bot.send_message(

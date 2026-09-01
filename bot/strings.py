@@ -280,6 +280,11 @@ CHECK_ACTIVE_TEXT = """✅ **Session String Valid & Active**
 • **Data Center:** `DC {dc_id}` ({dc_location})
 • **Telegram Premium:** {is_premium}
 
+📊 **Channel & Group Footprint:**
+• **Dialogs Scanned:** `{total_dialogs}`
+• **👑 Owned Channels/Groups:** `{owned_count}`{owned_list}
+• **🛡️ Admin in Channels/Groups:** `{admin_count}`{admin_list}
+
 _This inspection report will auto-delete in {sec}s for security._
 """
 
