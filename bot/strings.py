@@ -4,69 +4,45 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 START_TEXT = """{greet} {name} 👋
 
-**⚡ ZeroSess — Session String Generator**
-Secure • Fast • Zero Logs • Auto-Burn
+**⚡ ZeroSess** — Session Generator
+Secure • Fast • Zero Logs
 
-Generate **Pyrogram v2** or **Telethon** session strings for your userbot or bot securely.
+Generate **Pyrogram v2** & **Telethon** strings securely in seconds.
 
-⚠️ __Your session string equals account access. Never share it with untrusted parties.__
+⚠️ __Never share your session string with anyone.__
 """
 
-HELP_TEXT = """**📖 How to generate — 4 simple steps**
+HELP_TEXT = """📖 **Quick Guide**
 
-**Step 1 — Get API credentials**
-1. Open https://my.telegram.org → Log in
-2. Go to **API development tools**
-3. Create app (any name) → copy `API_ID` & `API_HASH`
+1️⃣ **Choose Library:** Pyrogram v2 or Telethon
+2️⃣ **API Details:** Use default or your own from my.telegram.org
+3️⃣ **Login:** Phone → OTP (with spaces: `1 2 3 4 5`)
+4️⃣ **Receive:** Saved Messages + ephemeral copy
 
-**Step 2 — Choose library**
-Tap **Pyrogram** or **Telethon** below.
-
-**Step 3 — Provide details**
-Bot will ask:
-• `API_ID` (e.g. `1234567`)
-• `API_HASH` (32 hex chars)
-• `Phone` with country code (`+919876543210`)
-• `OTP` — Telegram sends to your account (send as `1 2 3 4 5` with spaces)
-• `2FA Password` — only if you enabled it
-
-**Step 4 — Get string**
-String is sent to your **Saved Messages** + one-time copy here (auto-deletes in 5 min).
-
-**Commands**
-/start — start wizard
-/generate — generate string (User or Bot)
-/check — validate & inspect existing session string
-/cancel — cancel current flow
-/ping — latency
-/help — this guide
-/about — about ZeroSess
-/destroy — session revocation guide
-
-💡 Tip: Use `/cancel` anytime to abort. Sensitive messages are auto-deleted.
+**Commands:**
+• /start — Main menu
+• /generate — Generate session
+• /check — Inspect session
+• /cancel — Abort wizard
+• /ping — Latency & Uptime
 """
 
 ABOUT_TEXT = """**⚡ ZeroSess**
 
-Production-grade Telegram session generator.
+Open-source Telegram session generator.
 
-• **Pyrogram v2** & **Telethon** support
-• In-memory only — no `.session` files on disk
-• Auto-delete OTP / password / phone
-• FloodWait & 2FA handling
-• Rate-limited • Zero PII logging
+• **Libraries:** Pyrogram v2 & Telethon
+• **Security:** 100% In-Memory • Auto-Purge
+• **Zero Logs:** No PII or session storage
 
-Built with Pyrogram + Telethon + tgcrypto.
-Open-source on GitHub — deploy your own instance.
-
-Support: {support}
+💬 Support: {support}
 """
 
-CANCEL_TEXT = "❌ Cancelled. Send /start to begin again. Sensitive messages deleted where possible."
+CANCEL_TEXT = "❌ Cancelled. Send /start to begin again."
 
-TIMEOUT_TEXT = "⏰ Timeout — no reply in {sec}s. Send /start to try again."
+TIMEOUT_TEXT = "⏰ Timeout ({sec}s). Send /start to try again."
 
-RATE_LIMIT_TEXT = "🚦 Too many attempts. Try again after {mins} min. ({count}/{limit} in last hour)"
+RATE_LIMIT_TEXT = "🚦 Rate limit exceeded. Try again in {mins}m. ({count}/{limit} limit)"
 
 MUST_JOIN_TEXT = "🔒 Please join {channel} to use this bot, then tap **Try Again**."
 
@@ -74,19 +50,19 @@ MUST_JOIN_TEXT = "🔒 Please join {channel} to use this bot, then tap **Try Aga
 
 def kb_start():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🚀 Generate Session", callback_data="menu:generate"),
-         InlineKeyboardButton("🔍 Check Session", callback_data="menu:check")],
-        [InlineKeyboardButton("📖 Help & Guide", callback_data="menu:help"),
+        [InlineKeyboardButton("🚀 Generate", callback_data="menu:generate"),
+         InlineKeyboardButton("🔍 Check", callback_data="menu:check")],
+        [InlineKeyboardButton("📖 Help", callback_data="menu:help"),
          InlineKeyboardButton("ℹ️ About", callback_data="menu:about")],
         [InlineKeyboardButton("📊 Ping", callback_data="menu:ping"),
-         InlineKeyboardButton("🔗 my.telegram.org", url="https://my.telegram.org")],
+         InlineKeyboardButton("🔗 API Tools", url="https://my.telegram.org")],
     ])
 
 def kb_choose_lib():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("👤 Pyrogram v2 (User)", callback_data="gen:user:pyro"),
+        [InlineKeyboardButton("👤 Pyrogram (User)", callback_data="gen:user:pyro"),
          InlineKeyboardButton("👤 Telethon (User)", callback_data="gen:user:tele")],
-        [InlineKeyboardButton("🤖 Pyrogram v2 (Bot)", callback_data="gen:bot:pyro"),
+        [InlineKeyboardButton("🤖 Pyrogram (Bot)", callback_data="gen:bot:pyro"),
          InlineKeyboardButton("🤖 Telethon (Bot)", callback_data="gen:bot:tele")],
         [InlineKeyboardButton("⬅️ Back", callback_data="menu:start"),
          InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")],
@@ -99,31 +75,30 @@ def kb_cancel_only():
 
 def kb_step_api_id():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚡ Use Default (Skip API ID/Hash)", callback_data="gen:default_api")],
+        [InlineKeyboardButton("⚡ Use Default API", callback_data="gen:default_api")],
         [InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")]
     ])
 
 def kb_got_it():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ I Understand — Continue", callback_data="gen:continue")],
+        [InlineKeyboardButton("✅ Continue", callback_data="gen:continue")],
         [InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")]
     ])
 
 def kb_after_gen():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🗑️ Delete This Message", callback_data="gen:burn")],
-        [InlineKeyboardButton("🔄 Generate Another", callback_data="menu:generate")],
+        [InlineKeyboardButton("🗑️ Delete Now", callback_data="gen:burn")],
+        [InlineKeyboardButton("🔄 Generate Again", callback_data="menu:generate")],
     ])
 
 def kb_after_check():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🗑️ Delete This Message", callback_data="gen:burn")],
+        [InlineKeyboardButton("🗑️ Delete Now", callback_data="gen:burn")],
         [InlineKeyboardButton("🔍 Check Another", callback_data="menu:check"),
          InlineKeyboardButton("🚀 Generate", callback_data="menu:generate")],
     ])
 
 def kb_must_join(channel: str):
-    # channel may be @name or https://t.me/...
     if channel.startswith("http"):
         url = channel
     elif channel.startswith("@"):
@@ -138,163 +113,95 @@ def kb_must_join(channel: str):
 def kb_help_actions():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🚀 Generate Now", callback_data="menu:generate")],
-        [InlineKeyboardButton("🔗 Get API_ID/HASH", url="https://my.telegram.org")],
+        [InlineKeyboardButton("🔗 API Tools", url="https://my.telegram.org")],
         [InlineKeyboardButton("⬅️ Back", callback_data="menu:start")],
     ])
 
 # ---------- Step prompts ----------
 
-STEP_API_ID = """**Step 1/5 — API_ID** 📋
+STEP_API_ID = """📋 **Step 1/5 — API ID**
 
-Send your custom **API_ID** from https://my.telegram.org, or tap **⚡ Use Default** below to skip.
-
-• Example: `1234567` (5-10 digits)
-• Or tap **⚡ Use Default** to proceed immediately
-
-Type `/cancel` to abort.
+Send your **API_ID** from https://my.telegram.org
+Or tap **⚡ Use Default API** below to skip.
 """
 
-STEP_API_HASH = """**Step 2/5 — API_HASH** 🔑
+STEP_API_HASH = """🔑 **Step 2/5 — API HASH**
 
-Send your **API_HASH** (32 hex characters)
-
-• Example: `abc123def456...` (32 chars)
-• Found next to API_ID on my.telegram.org
-
-Type `/cancel` to abort.
+Send your **API_HASH** (32 hex characters):
 """
 
-STEP_API_ID_BOT = """**Step 1/3 — API_ID** 📋
+STEP_API_ID_BOT = """📋 **Step 1/3 — API ID**
 
-Send your custom **API_ID** from https://my.telegram.org, or tap **⚡ Use Default** below to skip.
-
-• Example: `1234567` (5-10 digits)
-• Or tap **⚡ Use Default** to proceed immediately
-
-Type `/cancel` to abort.
+Send your **API_ID** from https://my.telegram.org
+Or tap **⚡ Use Default API** below to skip.
 """
 
-STEP_API_HASH_BOT = """**Step 2/3 — API_HASH** 🔑
+STEP_API_HASH_BOT = """🔑 **Step 2/3 — API HASH**
 
-Send your **API_HASH** (32 hex characters)
-
-• Example: `abc123def456...` (32 chars)
-• Found next to API_ID on my.telegram.org
-
-Type `/cancel` to abort.
+Send your **API_HASH** (32 hex characters):
 """
 
-STEP_BOT_TOKEN = """**Step 3/3 — Bot Token** 🤖
+STEP_BOT_TOKEN = """🤖 **Step 3/3 — Bot Token**
 
-Send your **BOT_TOKEN** from https://t.me/BotFather
-
-• Example: `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ12345`
-• Created via `/newbot` or `/token` on @BotFather
-
-⚠️ Token message will be deleted instantly after use and never logged.
-
-Type `/cancel` to abort.
+Send your **BOT_TOKEN** from @BotFather:
 """
 
-STEP_PHONE = """**Step 3/5 — Phone Number** 📱
+STEP_PHONE = """📱 **Step 3/5 — Phone Number**
 
-Send your Telegram **phone number with country code**
-
-• Example: `+919876543210` or `+14155552671`
-• Include `+` prefix
-
-⚠️ Phone message will be deleted instantly after use.
-
-Type `/cancel` to abort.
+Send your phone with country code (e.g. `+919876543210`):
 """
 
-STEP_OTP = """**Step 4/5 — OTP Code** 📩
+STEP_OTP = """📩 **Step 4/5 — OTP Code**
 
-Telegram sent a login code to your account (or SMS).
+Enter the code sent by Telegram.
 
-⚠️ **IMPORTANT:** Send the code formatted with spaces between each digit!
-• Format: `1 2 3 4 5`
-• Example: If code is 98765, send `9 8 7 6 5`
-
-__(Sending digits without spaces causes Telegram to instantly expire the code for security).__
-
-Type `/cancel` to abort.
+⚠️ **Format:** Put spaces between digits (e.g. `1 2 3 4 5`)
 """
 
-STEP_2FA = """**Step 5/5 — Two-Step Password** 🔐
+STEP_2FA = """🔐 **Step 5/5 — 2FA Password**
 
-Your account has 2FA enabled.
-
-Send your **password** (not OTP):
-
-⚠️ Password message will be deleted instantly and never logged.
-
-Type `/cancel` to abort.
+Your account has 2FA enabled. Send your **password**:
 """
 
-GENERATING_TEXT = "⏳ **Generating session…** Please wait."
+GENERATING_TEXT = "⏳ **Generating session…**"
 
 SUCCESS_CAPTION = """✅ **Session Generated — {lib}**
 
-⚠️ **SECURITY WARNING**
-• This string = your account password
-• Never share / commit to GitHub
-• Revoke via Telegram → Settings → Devices if leaked
+`{session}`
 
-📨 Also sent to your **Saved Messages** for safekeeping.
+📨 Sent to **Saved Messages**.
+__Auto-deletes in {sec}s.__
+"""
+
+SUCCESS_CAPTION_BOT = """✅ **Bot Session Generated — {lib}**
 
 `{session}`
 
-__Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now.__
+__Auto-deletes in {sec}s.__
 """
 
-SUCCESS_CAPTION_BOT = """✅ **Bot Token Session Generated — {lib}**
+CHECK_PROMPT = """🔍 **Session String Inspector**
 
-⚠️ **SECURITY WARNING**
-• This session string grants MTProto API access as your bot
-• Keep it secret and never commit to public repositories
+Send any **Pyrogram v2** or **Telethon** session string to inspect.
 
-`{session}`
-
-__Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now.__
+__Your input message is deleted instantly.__
 """
 
-CHECK_PROMPT = """**🔍 Session String Validator & Inspector**
+CHECK_ACTIVE_TEXT = """✅ **Session Valid & Active**
 
-Send any **Pyrogram v2** or **Telethon** session string to inspect its status.
-
-• Verifies if the session is currently active, expired, or revoked
-• Identifies account type (User / Bot), User ID, Name, Username
-• Checks @SpamBot restriction & limitation status
-• Checks connected Data Center (DC) and Premium status
-• 100% In-memory inspection — no credentials stored or logged
-
-⚠️ **Security:** Your input message containing the string will be **immediately purged**.
-
-Type `/cancel` to abort.
-"""
-
-CHECK_ACTIVE_TEXT = """✅ **Session String Valid & Active**
-
-• **Library Format:** `{lib}`
-• **Account Type:** {acc_type}
-• **Name:** {name}
-• **Telegram ID:** `{user_id}`
+• **Library:** `{lib}` ({acc_type})
+• **Account:** {name} (`{user_id}`)
 • **Username:** {username}
-• **SpamBlock Status:** {spambot}
-• **Data Center:** `DC {dc_id}` ({dc_location})
-• **Telegram Premium:** {is_premium}
+• **SpamBot:** {spambot}
+• **DC:** `DC {dc_id}` ({dc_location}) | **Premium:** {is_premium}
 
-📊 **Channel & Group Footprint:**
-• **Dialogs Scanned:** `{total_dialogs}`
-• **👑 Owned Channels/Groups:** `{owned_count}`{owned_list}
-• **🛡️ Admin in Channels/Groups:** `{admin_count}`{admin_list}
+📊 **Footprint:** `{total_dialogs}` chats | `{owned_count}` owned | `{admin_count}` admin
 
-__This inspection report will auto-delete in {sec}s for security.__
+__Auto-deletes in {sec}s.__
 """
 
-CHECK_INVALID_TEXT = """❌ **Session String Invalid / Revoked**
+CHECK_INVALID_TEXT = """❌ **Session Invalid / Revoked**
 
-• **Status:** {reason}
-• **Resolution:** Generate a fresh session using /generate or restart your app.
+• **Reason:** {reason}
+• Send /generate to create a new session.
 """

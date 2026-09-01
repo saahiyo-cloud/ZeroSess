@@ -145,10 +145,10 @@ async def cb_handler(bot: Client, q: CallbackQuery):
             await q.answer(RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT), show_alert=True)
             return
         await q.message.edit_text(
-            "**🔑 Choose Generation Mode & Library**\n\n"
-            "• **👤 User Session:** For user accounts (Phone + OTP + 2FA)\n"
-            "• **🤖 Bot Token Session:** For bots via BotFather token (Instant)\n\n"
-            "Strings are **not** interchangeable between Pyrogram and Telethon.",
+            "🔑 **Choose Library & Mode**\n\n"
+            "• **User:** User account (Phone + OTP)\n"
+            "• **Bot:** Bot token (@BotFather)\n\n"
+            "Select an option below:",
             reply_markup=kb_choose_lib()
         )
     elif data in ("gen:user:pyro", "gen:user:tele", "gen:bot:pyro", "gen:bot:tele", "gen:pyro", "gen:tele"):

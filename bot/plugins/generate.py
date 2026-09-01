@@ -56,11 +56,15 @@ async def cmd_generate(bot: Client, msg: Message):
         mins = max(1, retry // 60)
         await msg.reply_text(RATE_LIMIT_TEXT.format(mins=mins, count=config.RATE_LIMIT_COUNT, limit=config.RATE_LIMIT_COUNT))
         return
+    try:
+        await msg.delete()
+    except Exception:
+        pass
     await msg.reply_text(
-        "**🔑 Choose Generation Mode & Library**\n\n"
-        "• **👤 User Session:** For user accounts (Phone + OTP + 2FA)\n"
-        "• **🤖 Bot Token Session:** For bots via BotFather token (Instant)\n\n"
-        "Strings are **not** interchangeable between Pyrogram and Telethon.",
+        "🔑 **Choose Library & Mode**\n\n"
+        "• **User:** User account (Phone + OTP)\n"
+        "• **Bot:** Bot token (@BotFather)\n\n"
+        "Select an option below:",
         reply_markup=kb_choose_lib()
     )
 
