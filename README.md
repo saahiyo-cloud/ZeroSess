@@ -152,11 +152,15 @@ graph TD
 
 ---
 
-## ⭐ Stargazers Over Time
+## 🌟 Show Your Support
 
-[![Star History Chart](https://api.star-history.com/svg?repos=saahiyo-cloud/ZeroSess&type=Date)](https://star-history.com/#saahiyo-cloud/ZeroSess&Date)
+If you find **ZeroSess** helpful or use it in your projects:
+- Give this project a **Star ⭐** to support future updates!
+- **Fork** the repository to customize or contribute new features.
+- Share with your fellow Telegram developers!
 
-If you find this project helpful, please consider giving it a **Star ⭐** on GitHub!
+[![Star ZeroSess](https://img.shields.io/badge/⭐_Star_ZeroSess-on_GitHub-yellow?style=for-the-badge&logo=github)](https://github.com/saahiyo-cloud/ZeroSess/stargazers)
+[![Fork ZeroSess](https://img.shields.io/badge/🍴_Fork_Repository-ZeroSess-blue?style=for-the-badge&logo=github)](https://github.com/saahiyo-cloud/ZeroSess/fork)
 
 ---
 
