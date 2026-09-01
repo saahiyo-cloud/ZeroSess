@@ -2,26 +2,53 @@
 
 # ⚡ ZeroSess
 
-### Production-Grade Telegram Session String Generator Bot
+### The Modern, Zero-PII Telegram Session String Generator Bot & CLI
+**Generate Pyrogram v2, Telethon & Bot Token MTProto Session Strings in Seconds.**
 
 [![CI](https://github.com/saahiyo-cloud/ZeroSess/actions/workflows/ci.yml/badge.svg)](https://github.com/saahiyo-cloud/ZeroSess/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/saahiyo-cloud/ZeroSess?style=flat&color=yellow)](https://github.com/saahiyo-cloud/ZeroSess/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/saahiyo-cloud/ZeroSess?style=flat&color=blue)](https://github.com/saahiyo-cloud/ZeroSess/network/members)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![Docker Supported](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](Dockerfile)
 [![Pyrogram v2](https://img.shields.io/badge/Pyrogram-v2.0.106-informational.svg)](https://docs.pyrogram.org/)
 [![Telethon](https://img.shields.io/badge/Telethon-v1.41.2-informational.svg)](https://docs.telethon.dev/)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/saahiyo-cloud/ZeroSess/blob/main/ZeroSess_Colab.ipynb)
 
-**Secure Telegram bot to generate Pyrogram v2 & Telethon session strings with a guided wizard UI, auto-burn, and zero PII logging.**
+<br/>
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Deployment](#-one-click-deploy) • [Security Policy](#-security--privacy) • [Tech Stack](#-tech-stack)
+[🚀 Quick Start](#-instant-run-options) • [✨ Features](#-key-features) • [⚖️ Feature Comparison](#️-feature-comparison) • [☁️ Deployment](#-one-click-deploy) • [🛡️ Security](#-security--zero-pii-guarantee) • [🤝 Contributing](CONTRIBUTING.md)
 
 ---
 
 </div>
 
+## 🚀 Instant Run Options
+
+Choose the fastest way for you to generate a session string:
+
+### 1. 📓 In-Browser (Google Colab — Zero Setup)
+Generate your session string online in 10 seconds without installing anything:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/saahiyo-cloud/ZeroSess/blob/main/ZeroSess_Colab.ipynb)
+
+### 2. 📱 1-Line Termux & Linux CLI (Mobile / Terminal)
+Run the interactive wizard directly in your Termux or Linux terminal:
+```bash
+curl -sSL https://raw.githubusercontent.com/saahiyo-cloud/ZeroSess/main/scripts/generate.sh | bash
+```
+
+### 3. 🤖 Self-Host Your Own Telegram Bot
+Clone and run your dedicated Telegram Bot in 2 commands:
+```bash
+git clone https://github.com/saahiyo-cloud/ZeroSess.git
+cd ZeroSess && cp .env.example .env && pip install -r requirements.txt && python -m bot
+```
+
+---
+
 ## ✨ Key Features
 
-- 🧙‍♂️ **Interactive Wizard UI:** Clean Step 1/5 (User) and Step 1/3 (Bot) progress with `Cancel` on every step.
+- 🧙‍♂️ **Interactive Wizard UI:** Clean step-by-step progress with `Cancel` on every step.
 - 🤖 **Dual Mode Support:**
   - **👤 User Account Sessions:** Pyrogram v2 & Telethon (Phone + OTP + 2FA support).
   - **🤖 Bot Token Sessions:** Instant MTProto session generation using BotFather token (No OTP needed).
@@ -37,38 +64,21 @@
 
 ---
 
-## 🚀 Quick Start
+## ⚖️ Feature Comparison
 
-### 1. Prerequisites
-- **API_ID & API_HASH:** Get them at [my.telegram.org](https://my.telegram.org) → *API development tools*.
-- **BOT_TOKEN:** Create a bot via [@BotFather](https://t.me/BotFather) → `/newbot`.
+Why developers choose **ZeroSess** over legacy session generator bots:
 
-### 2. Local Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/saahiyo-cloud/ZeroSess.git
-cd ZeroSess
-
-# Copy configuration
-cp .env.example .env
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the bot
-python -m bot
-```
-
-### 3. Docker Deployment
-
-```bash
-# Build and run in detached mode
-docker compose up --build -d
-
-# View live logs
-docker logs -f zerosess-bot-1
-```
+| Feature | ⚡ ZeroSess | Old StringSessionBot | TG-String-Session |
+| :--- | :---: | :---: | :---: |
+| **Pyrogram v2 Support (64-bit ID safe)** | ✅ **Yes (Native)** | ❌ (Pyrogram v1 Only) | ❌ (Outdated) |
+| **Telethon v1.41+ Support** | ✅ **Yes** | ✅ Yes | ✅ Yes |
+| **Bot Token MTProto Session** | ✅ **Yes (Instant)** | ❌ No | ❌ No |
+| **Session String Inspector (`/check`)** | ✅ **Yes (In-Memory)** | ❌ No | ❌ No |
+| **Zero-PII & In-Memory (No Disk Files)**| ✅ **100% Ephemeral** | ⚠️ Partial | ❌ Saves to disk |
+| **Auto-Burn & Saved Messages Delivery** | ✅ **Yes** | ❌ No | ❌ No |
+| **Google Colab 1-Click Run** | ✅ **Yes** | ❌ No | ❌ No |
+| **Termux 1-Line Script** | ✅ **Yes** | ❌ No | ❌ No |
+| **Docker & 1-Click Cloud Deploy** | ✅ **Railway / Render** | ⚠️ Heroku only | ⚠️ Broken |
 
 ---
 
@@ -81,7 +91,7 @@ Deploy your own instance of ZeroSess in under 60 seconds:
 | **Railway** | [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/saahiyo-cloud/ZeroSess) |
 | **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/saahiyo-cloud/ZeroSess) |
 
-> **Note:** Fill in `API_ID`, `API_HASH`, and `BOT_TOKEN` in the environment variables settings on your platform.
+> **Note:** Provide your `API_ID`, `API_HASH`, and `BOT_TOKEN` in the environment variables settings on your platform.
 
 ---
 
@@ -124,7 +134,7 @@ graph TD
 
 ---
 
-## 🛡️ Security & Privacy
+## 🛡️ Security & Zero-PII Guarantee
 
 1. **In-Memory Guarantee:** ZeroSess never writes session tokens, phone numbers, or passwords to local disk or SQLite files.
 2. **Ephemeral Purge:** User-sent OTPs and 2FA passwords are removed immediately from the chat history where bot permissions allow.
@@ -142,42 +152,11 @@ graph TD
 
 ---
 
-## 📁 Repository Structure
+## ⭐ Stargazers Over Time
 
-```
-ZeroSess/
-├── .github/
-│   ├── ISSUE_TEMPLATE/     # Bug report & feature request forms
-│   ├── workflows/ci.yml     # GitHub Actions CI workflow
-│   └── pull_request_template.md
-├── bot/
-│   ├── __init__.py
-│   ├── __main__.py          # Entrypoint & lifecycle management
-│   ├── config.py            # Environment validation & sanitization
-│   ├── fsm.py               # State machine & async step waiter
-│   ├── strings.py           # Text templates & inline keyboards
-│   ├── generators/
-│   │   ├── pyrogram_gen.py  # Pyrogram v2 in-memory auth
-│   │   └── telethon_gen.py  # Telethon in-memory auth
-│   └── plugins/
-│       ├── start.py         # /start, /help, /about handlers
-│       ├── generate.py      # Multi-step generation wizard
-│       ├── stats.py         # Admin stats & metrics
-│       └── destroy.py       # Session termination guide
-├── .env.example
-├── .gitignore
-├── app.json                 # Deployment schema
-├── CONTRIBUTING.md          # Contribution guidelines
-├── Dockerfile
-├── docker-compose.yml
-├── LICENSE                  # MIT License
-├── Procfile
-├── README.md
-├── render.yaml
-├── requirements.txt
-├── runtime.txt
-└── SECURITY.md              # Security policies & disclosures
-```
+[![Star History Chart](https://api.star-history.com/svg?repos=saahiyo-cloud/ZeroSess&type=Date)](https://star-history.com/#saahiyo-cloud/ZeroSess&Date)
+
+If you find this project helpful, please consider giving it a **Star ⭐** on GitHub!
 
 ---
 
