@@ -17,7 +17,7 @@ from ..fsm import (
 )
 from ..generators import pyrogram_gen as P
 from ..generators import telethon_gen as T
-from telethon.errors import SessionPasswordNeededError as TelePassNeeded
+from telethon.errors import SessionPasswordNeededError
 
 # Global message handler to fulfill waiters
 @Client.on_message(filters.private & ~filters.me & ~filters.bot, group=-1)
