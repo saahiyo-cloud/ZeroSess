@@ -9,7 +9,7 @@ Secure • Fast • Zero Logs • Auto-Burn
 
 Generate **Pyrogram v2** or **Telethon** session strings for your userbot or bot securely.
 
-⚠️ *Your session string equals account access. Never share it with untrusted parties.*
+⚠️ __Your session string equals account access. Never share it with untrusted parties.__
 """
 
 HELP_TEXT = """**📖 How to generate — 4 simple steps**
@@ -240,7 +240,7 @@ SUCCESS_CAPTION = """✅ **Session Generated — {lib}**
 
 `{session}`
 
-_Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now._
+__Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now.__
 """
 
 SUCCESS_CAPTION_BOT = """✅ **Bot Token Session Generated — {lib}**
@@ -251,7 +251,7 @@ SUCCESS_CAPTION_BOT = """✅ **Bot Token Session Generated — {lib}**
 
 `{session}`
 
-_Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now._
+__Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now.__
 """
 
 CHECK_PROMPT = """**🔍 Session String Validator & Inspector**
@@ -285,7 +285,7 @@ CHECK_ACTIVE_TEXT = """✅ **Session String Valid & Active**
 • **👑 Owned Channels/Groups:** `{owned_count}`{owned_list}
 • **🛡️ Admin in Channels/Groups:** `{admin_count}`{admin_list}
 
-_This inspection report will auto-delete in {sec}s for security._
+__This inspection report will auto-delete in {sec}s for security.__
 """
 
 CHECK_INVALID_TEXT = """❌ **Session String Invalid / Revoked**
