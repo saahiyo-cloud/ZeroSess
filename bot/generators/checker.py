@@ -21,6 +21,46 @@ DC_LOCATIONS = {
     5: "Singapore",
 }
 
+async def _get_pyrogram_dc_id(client: Client, me) -> int:
+    try:
+        if hasattr(client, "storage") and hasattr(client.storage, "dc_id"):
+            val = client.storage.dc_id
+            if callable(val):
+                res = val()
+                if asyncio.iscoroutine(res):
+                    res = await res
+                if isinstance(res, int) and res > 0:
+                    return res
+            elif isinstance(val, int) and val > 0:
+                return val
+    except Exception:
+        pass
+
+    try:
+        val = getattr(me, "dc_id", 0)
+        if isinstance(val, int) and val > 0:
+            return val
+    except Exception:
+        pass
+
+    return 0
+
+def _get_telethon_dc_id(t_client: TelegramClient, me) -> int:
+    try:
+        if hasattr(t_client, "session") and hasattr(t_client.session, "dc_id"):
+            val = t_client.session.dc_id
+            if isinstance(val, int) and val > 0:
+                return val
+    except Exception:
+        pass
+    try:
+        val = getattr(me, "dc_id", 0)
+        if isinstance(val, int) and val > 0:
+            return val
+    except Exception:
+        pass
+    return 0
+
 async def check_pyrogram_spambot(client: Client, is_bot: bool) -> str:
     """Queries @SpamBot to check if the user account is restricted or spamblocked."""
     if is_bot:
@@ -42,8 +82,7 @@ async def check_pyrogram_spambot(client: Client, is_bot: bool) -> str:
                     if "good news" in txt or "no limits" in txt or "free as a bird" in txt:
                         return "🟢 Clean (No limits applied)"
                     elif "unfortunately" in txt or "limit" in txt or "restricted" in txt or "spam" in txt:
-                        first_line = (msg.text or "").split("\n")[0][:50]
-                        return f"🔴 Restricted ({first_line})"
+                        return "🔴 Restricted (Limitations applied by Telegram)"
         return "🟢 Clean (No limits applied)"
     except Exception:
         return "🟢 Clean (No limits applied)"
@@ -71,8 +110,7 @@ async def check_telethon_spambot(client: TelegramClient, is_bot: bool) -> str:
                     if "good news" in txt or "no limits" in txt or "free as a bird" in txt:
                         return "🟢 Clean (No limits applied)"
                     elif "unfortunately" in txt or "limit" in txt or "restricted" in txt or "spam" in txt:
-                        first_line = (msg.text or "").split("\n")[0][:50]
-                        return f"🔴 Restricted ({first_line})"
+                        return "🔴 Restricted (Limitations applied by Telegram)"
         return "🟢 Clean (No limits applied)"
     except Exception:
         return "🟢 Clean (No limits applied)"
@@ -192,7 +230,7 @@ async def inspect_session(session_string: str) -> dict:
         await client.connect()
         try:
             me = await client.get_me()
-            dc_id = getattr(client.storage, "dc_id", 0) if hasattr(client, "storage") else (getattr(me, "dc_id", 0) or 0)
+            dc_id = await _get_pyrogram_dc_id(client, me)
             dc_name = DC_LOCATIONS.get(dc_id, "Unknown DC")
             acc_type = "🤖 Bot Account" if me.is_bot else "👤 User Account"
             spambot_status = await check_pyrogram_spambot(client, me.is_bot)
@@ -236,7 +274,7 @@ async def inspect_session(session_string: str) -> dict:
             if not await t_client.is_user_authorized():
                 return {"valid": False, "reason": "Session is not authorized or has been terminated"}
             me = await t_client.get_me()
-            dc_id = getattr(t_client.session, "dc_id", 0) if hasattr(t_client, "session") else 0
+            dc_id = _get_telethon_dc_id(t_client, me)
             dc_name = DC_LOCATIONS.get(dc_id, "Unknown DC")
             is_bot = getattr(me, "bot", False)
             acc_type = "🤖 Bot Account" if is_bot else "👤 User Account"
