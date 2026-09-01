@@ -97,6 +97,12 @@ def kb_cancel_only():
         [InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")]
     ])
 
+def kb_step_api_id():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("⚡ Use Default (Skip API ID/Hash)", callback_data="gen:default_api")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="menu:cancel")]
+    ])
+
 def kb_got_it():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("✅ I Understand — Continue", callback_data="gen:continue")],
@@ -140,11 +146,10 @@ def kb_help_actions():
 
 STEP_API_ID = """**Step 1/5 — API_ID** 📋
 
-Send your **API_ID** from https://my.telegram.org
+Send your custom **API_ID** from https://my.telegram.org, or tap **⚡ Use Default** below to skip.
 
-• Tap **API development tools**
-• Example: `1234567`
-• Only numbers, 5-10 digits
+• Example: `1234567` (5-10 digits)
+• Or tap **⚡ Use Default** to proceed immediately
 
 Type `/cancel` to abort.
 """
@@ -161,11 +166,10 @@ Type `/cancel` to abort.
 
 STEP_API_ID_BOT = """**Step 1/3 — API_ID** 📋
 
-Send your **API_ID** from https://my.telegram.org
+Send your custom **API_ID** from https://my.telegram.org, or tap **⚡ Use Default** below to skip.
 
-• Tap **API development tools**
-• Example: `1234567`
-• Only numbers, 5-10 digits
+• Example: `1234567` (5-10 digits)
+• Or tap **⚡ Use Default** to proceed immediately
 
 Type `/cancel` to abort.
 """

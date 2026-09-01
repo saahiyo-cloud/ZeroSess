@@ -9,7 +9,7 @@ from ..strings import (
     STEP_API_ID, STEP_API_HASH, STEP_API_ID_BOT, STEP_API_HASH_BOT, STEP_BOT_TOKEN,
     STEP_PHONE, STEP_OTP, STEP_2FA,
     GENERATING_TEXT, SUCCESS_CAPTION, SUCCESS_CAPTION_BOT, CANCEL_TEXT, TIMEOUT_TEXT, RATE_LIMIT_TEXT,
-    kb_cancel_only, kb_start, kb_after_gen, kb_choose_lib
+    kb_cancel_only, kb_start, kb_after_gen, kb_choose_lib, kb_step_api_id
 )
 from ..fsm import (
     get_lock, wait_for_text, fulfill_waiter, cancel_waiter,
@@ -64,12 +64,12 @@ async def cmd_cancel(bot: Client, msg: Message):
     cancel_waiter(msg.from_user.id)
     await msg.reply_text(CANCEL_TEXT, reply_markup=kb_start())
 
-async def _ask(bot: Client, chat_id: int, user_id: int, prompt: str, timeout: int) -> str | None:
+async def _ask(bot: Client, chat_id: int, user_id: int, prompt: str, timeout: int, reply_markup = None) -> str | None:
     """
     Sends prompt and waits for user text via FSM waiter.
     Returns text or None on timeout/cancel. Handles auto-cleanup of prompt message on burn.
     """
-    sent = await bot.send_message(chat_id, prompt, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
+    sent = await bot.send_message(chat_id, prompt, reply_markup=reply_markup or kb_cancel_only(), disable_web_page_preview=True)
     text = await wait_for_text(user_id, timeout=timeout)
     if text is None:
         try:
@@ -110,11 +110,11 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = 
 
         # Edit chooser -> step 1 (set waiter then wait)
         try:
-            await query.message.edit_text(step1_prompt, reply_markup=kb_cancel_only(), disable_web_page_preview=True)
+            await query.message.edit_text(step1_prompt, reply_markup=kb_step_api_id(), disable_web_page_preview=True)
         except Exception:
             pass
 
-        # ---- Step 1: API_ID ----
+        # ---- Step 1 & 2: API_ID & API_HASH ----
         api_id_text = await wait_for_text(user_id, timeout=config.SESSION_TIMEOUT)
         if api_id_text is None:
             try:
@@ -123,38 +123,48 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = 
                 pass
             return
 
-        # Validate API_ID (retry loop)
         api_id = None
-        t = api_id_text
-        for _ in range(3):
-            try:
-                api_id = P.validate_api_id(t)
-                break
-            except P.GenError as e:
-                t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{step1_prompt}", config.SESSION_TIMEOUT)
-                if t is None:
-                    return
-        if api_id is None:
-            await bot.send_message(chat_id, "❌ Too many invalid attempts. Send /start to retry.", reply_markup=kb_start())
-            return
-
-        # ---- Step 2: API_HASH ----
-        api_hash_text = await _ask(bot, chat_id, user_id, step2_prompt, config.SESSION_TIMEOUT)
-        if api_hash_text is None:
-            return
         api_hash = None
-        t = api_hash_text
-        for _ in range(3):
-            try:
-                api_hash = P.validate_api_hash(t)
-                break
-            except P.GenError as e:
-                t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{step2_prompt}", config.SESSION_TIMEOUT)
-                if t is None:
+
+        if api_id_text == "__DEFAULT_API__":
+            api_id = config.API_ID
+            api_hash = config.API_HASH
+        else:
+            # Validate custom API_ID (retry loop)
+            t = api_id_text
+            for _ in range(3):
+                if t == "__DEFAULT_API__":
+                    api_id = config.API_ID
+                    api_hash = config.API_HASH
+                    break
+                try:
+                    api_id = P.validate_api_id(t)
+                    break
+                except P.GenError as e:
+                    t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{step1_prompt}", config.SESSION_TIMEOUT, reply_markup=kb_step_api_id())
+                    if t is None:
+                        return
+            if api_id is None:
+                await bot.send_message(chat_id, "❌ Too many invalid attempts. Send /start to retry.", reply_markup=kb_start())
+                return
+
+            if not api_hash:
+                # ---- Step 2: API_HASH ----
+                api_hash_text = await _ask(bot, chat_id, user_id, step2_prompt, config.SESSION_TIMEOUT)
+                if api_hash_text is None:
                     return
-        if api_hash is None:
-            await bot.send_message(chat_id, "❌ Too many invalid attempts.", reply_markup=kb_start())
-            return
+                t = api_hash_text
+                for _ in range(3):
+                    try:
+                        api_hash = P.validate_api_hash(t)
+                        break
+                    except P.GenError as e:
+                        t = await _ask(bot, chat_id, user_id, f"{e.user_msg}\n\n{step2_prompt}", config.SESSION_TIMEOUT)
+                        if t is None:
+                            return
+                if api_hash is None:
+                    await bot.send_message(chat_id, "❌ Too many invalid attempts.", reply_markup=kb_start())
+                    return
 
         # ---- If Bot Token Session Mode ----
         if mode == "bot":

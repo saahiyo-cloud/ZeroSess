@@ -177,6 +177,19 @@ async def cb_handler(bot: Client, q: CallbackQuery):
             await q.message.edit_text(CANCEL_TEXT, reply_markup=kb_start())
         except Exception:
             await q.message.reply_text(CANCEL_TEXT, reply_markup=kb_start())
+    elif data == "gen:default_api":
+        from ..fsm import fulfill_waiter
+        fulfilled = fulfill_waiter(q.from_user.id, "__DEFAULT_API__")
+        if fulfilled:
+            try:
+                await q.answer("⚡ Using default API credentials!")
+            except Exception:
+                pass
+        else:
+            try:
+                await q.answer("⚠️ Wizard timed out or inactive. Send /generate to retry.", show_alert=True)
+            except Exception:
+                pass
     elif data == "gen:burn":
         try:
             await q.message.delete()
