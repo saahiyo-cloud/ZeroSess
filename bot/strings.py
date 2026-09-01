@@ -35,11 +35,13 @@ String is sent to your **Saved Messages** + one-time copy here (auto-deletes in 
 
 **Commands**
 /start — start wizard
-/generate — generate string
+/generate — generate string (User or Bot)
+/check — validate & inspect existing session string
 /cancel — cancel current flow
 /ping — latency
 /help — this guide
 /about — about ZeroSess
+/destroy — session revocation guide
 
 💡 Tip: Use `/cancel` anytime to abort. Sensitive messages are auto-deleted.
 """
@@ -72,7 +74,8 @@ MUST_JOIN_TEXT = "🔒 Please join {channel} to use this bot, then tap **Try Aga
 
 def kb_start():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🚀 Generate Session", callback_data="menu:generate")],
+        [InlineKeyboardButton("🚀 Generate Session", callback_data="menu:generate"),
+         InlineKeyboardButton("🔍 Check Session", callback_data="menu:check")],
         [InlineKeyboardButton("📖 Help & Guide", callback_data="menu:help"),
          InlineKeyboardButton("ℹ️ About", callback_data="menu:about")],
         [InlineKeyboardButton("📊 Ping", callback_data="menu:ping"),
@@ -104,6 +107,13 @@ def kb_after_gen():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🗑️ Delete This Message", callback_data="gen:burn")],
         [InlineKeyboardButton("🔄 Generate Another", callback_data="menu:generate")],
+    ])
+
+def kb_after_check():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🗑️ Delete This Message", callback_data="gen:burn")],
+        [InlineKeyboardButton("🔍 Check Another", callback_data="menu:check"),
+         InlineKeyboardButton("🚀 Generate", callback_data="menu:generate")],
     ])
 
 def kb_must_join(channel: str):
@@ -242,4 +252,37 @@ SUCCESS_CAPTION_BOT = """✅ **Bot Token Session Generated — {lib}**
 `{session}`
 
 _Tap to copy. This message auto-deletes in {sec}s → tap 🗑️ to delete now._
+"""
+
+CHECK_PROMPT = """**🔍 Session String Validator & Inspector**
+
+Send any **Pyrogram v2** or **Telethon** session string to inspect its status.
+
+• Verifies if the session is currently active, expired, or revoked
+• Identifies account type (User / Bot), User ID, Name, Username
+• Checks connected Data Center (DC) and Premium status
+• 100% In-memory inspection — no credentials stored or logged
+
+⚠️ **Security:** Your input message containing the string will be **immediately purged**.
+
+Type `/cancel` to abort.
+"""
+
+CHECK_ACTIVE_TEXT = """✅ **Session String Valid & Active**
+
+• **Library Format:** `{lib}`
+• **Account Type:** {acc_type}
+• **Name:** {name}
+• **Telegram ID:** `{user_id}`
+• **Username:** {username}
+• **Data Center:** `DC {dc_id}` ({dc_location})
+• **Telegram Premium:** {is_premium}
+
+_This inspection report will auto-delete in {sec}s for security._
+"""
+
+CHECK_INVALID_TEXT = """❌ **Session String Invalid / Revoked**
+
+• **Status:** {reason}
+• **Resolution:** Generate a fresh session using /generate or restart your app.
 """

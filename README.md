@@ -25,6 +25,7 @@
 - 🤖 **Dual Mode Support:**
   - **👤 User Account Sessions:** Pyrogram v2 & Telethon (Phone + OTP + 2FA support).
   - **🤖 Bot Token Sessions:** Instant MTProto session generation using BotFather token (No OTP needed).
+- 🔍 **Session Validator & Inspector (`/check`):** Safely test any Pyrogram v2 or Telethon session string in-memory to view account status, ID, username, Data Center (DC), and Premium status.
 - 🛡️ **Zero PII Logging & In-Memory:** No `.session` or `.sqlite` files written to disk. Pure ephemeral memory.
 - 🔥 **Auto-Burn & Ephemeral Output:** Sensitive inputs (phone, OTP, 2FA password, bot tokens) are immediately purged. Final session messages auto-delete after 5 minutes (configurable) with an instant `🗑️ Delete Now` button.
 - 🔐 **Saved Messages Delivery:** Sends user session strings directly to your account's **Saved Messages** for safekeeping.

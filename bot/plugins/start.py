@@ -115,6 +115,9 @@ async def cb_handler(bot: Client, q: CallbackQuery):
             mode = "user"
             lib = "pyrogram" if data in ("gen:user:pyro", "gen:pyro") else "telethon"
         await start_wizard(bot, q, lib=lib, mode=mode)
+    elif data == "menu:check":
+        from .check import handle_check_callback
+        await handle_check_callback(bot, q)
     elif data == "menu:cancel":
         from ..fsm import cancel_waiter
         cancel_waiter(q.from_user.id)
