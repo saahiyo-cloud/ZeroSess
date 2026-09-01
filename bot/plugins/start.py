@@ -1,8 +1,11 @@
+import re
 import time
 import asyncio
+import logging
 from pyrogram import Client, filters
 from pyrogram.types import Message, CallbackQuery
-from pyrogram.enums import ParseMode
+from pyrogram.enums import ParseMode, ChatMemberStatus
+from pyrogram.errors import UserNotParticipant, ChatAdminRequired, ChannelPrivate, UsernameNotOccupied, PeerIdInvalid
 
 from .. import config
 from ..strings import (
@@ -12,36 +15,64 @@ from ..strings import (
 from ..fsm import is_rate_limited
 from .. import database as db
 
+logger = logging.getLogger("session-gen")
 START_TIME = time.time()
 
-def _must_join_ok(user_id: int) -> bool:
-    # MUST_JOIN enforcement is done via get_chat_member check in handler
-    return True
+async def check_must_join(bot: Client, user_id: int) -> bool:
+    if not config.MUST_JOIN:
+        return True
+    if config.OWNER_ID and user_id == config.OWNER_ID:
+        return True
+
+    ch = str(config.MUST_JOIN).strip()
+    if not ch:
+        return True
+
+    # Normalize channel identifier (numeric ID or @username)
+    if re.fullmatch(r"^-?\d+$", ch):
+        target_chat = int(ch)
+    else:
+        clean = re.sub(r"^(https?://)?(www\.)?t\.me/", "", ch).lstrip("@").strip()
+        target_chat = f"@{clean}" if clean and not clean.startswith("+") else ch
+
+    try:
+        member = await bot.get_chat_member(target_chat, user_id)
+        if member.status in (ChatMemberStatus.BANNED, ChatMemberStatus.LEFT, "banned", "left", "kicked"):
+            return False
+        return True
+    except UserNotParticipant:
+        return False
+    except ChatAdminRequired:
+        logger.warning(
+            f"⚠️ Bot is NOT an admin in MUST_JOIN channel ({target_chat})! "
+            "Add the bot as Administrator to your channel with 'Invite Users' or 'Post' permissions to enforce join verification."
+        )
+        return True
+    except (ChannelPrivate, UsernameNotOccupied, PeerIdInvalid) as e:
+        logger.warning(f"⚠️ Cannot access MUST_JOIN channel ({target_chat}): {e}. Bypassing check.")
+        return True
+    except Exception as e:
+        logger.error(f"⚠️ Error checking MUST_JOIN for {user_id} in {target_chat}: {e}")
+        return True
 
 @Client.on_message(filters.command(["start", "help", "about", "ping"]))
 async def cmd_handler(bot: Client, msg: Message):
-    if msg.from_user:
-        asyncio.create_task(db.add_user(msg.from_user.id, msg.from_user.first_name, msg.from_user.username))
+    if not msg.from_user:
+        return
+    asyncio.create_task(db.add_user(msg.from_user.id, msg.from_user.first_name, msg.from_user.username))
     cmd = msg.text.split()[0].lstrip("/").split("@")[0].lower()
+
     # must_join gate
-    if config.MUST_JOIN:
+    if not await check_must_join(bot, msg.from_user.id):
         try:
-            ch = config.MUST_JOIN.replace("https://t.me/", "@").replace("t.me/", "@")
-            if not ch.startswith("@"):
-                ch = "@" + ch.lstrip("@")
-            member = await bot.get_chat_member(ch, msg.from_user.id)
-            if member.status in ("kicked", "left"):
-                raise ValueError("not joined")
+            await msg.reply_text(
+                MUST_JOIN_TEXT.format(channel=config.MUST_JOIN),
+                reply_markup=kb_must_join(config.MUST_JOIN),
+                disable_web_page_preview=True
+            )
+            return
         except Exception:
-            try:
-                await msg.reply_text(
-                    MUST_JOIN_TEXT.format(channel=config.MUST_JOIN),
-                    reply_markup=kb_must_join(config.MUST_JOIN),
-                    disable_web_page_preview=True
-                )
-                return
-            except Exception:
-                pass
+            return
 
     if cmd == "start":
         greet = "Hello" if msg.from_user.first_name else "Hi"
@@ -67,13 +98,18 @@ async def cmd_handler(bot: Client, msg: Message):
 @Client.on_callback_query()
 async def cb_handler(bot: Client, q: CallbackQuery):
     data = q.data or ""
-    # Always answer to remove spinner
-    try:
-        await q.answer()
-    except Exception:
-        pass
 
     if data == "menu:start":
+        if not await check_must_join(bot, q.from_user.id):
+            try:
+                await q.answer("⚠️ You haven't joined yet! Please join the channel first.", show_alert=True)
+            except Exception:
+                pass
+            return
+        try:
+            await q.answer("✅ Verified! Welcome.")
+        except Exception:
+            pass
         greet = "Hello"
         await q.message.edit_text(
             START_TEXT.format(greet=greet, name=q.from_user.first_name or "there"),
@@ -95,6 +131,12 @@ async def cb_handler(bot: Client, q: CallbackQuery):
         mm, s = divmod(r, 60)
         await q.message.edit_text(f"🏓 **Pong!** `{ms}ms`\n⏱ Uptime: `{h}h {mm}m {s}s`", reply_markup=kb_start())
     elif data == "menu:generate":
+        if not await check_must_join(bot, q.from_user.id):
+            try:
+                await q.answer("⚠️ You haven't joined yet! Please join the channel first.", show_alert=True)
+            except Exception:
+                pass
+            return
         # rate limit check on click
         limited, retry = is_rate_limited(q.from_user.id)
         if limited:
@@ -119,6 +161,12 @@ async def cb_handler(bot: Client, q: CallbackQuery):
             lib = "pyrogram" if data in ("gen:user:pyro", "gen:pyro") else "telethon"
         await start_wizard(bot, q, lib=lib, mode=mode)
     elif data == "menu:check":
+        if not await check_must_join(bot, q.from_user.id):
+            try:
+                await q.answer("⚠️ You haven't joined yet! Please join the channel first.", show_alert=True)
+            except Exception:
+                pass
+            return
         from .check import handle_check_callback
         await handle_check_callback(bot, q)
     elif data == "menu:cancel":
