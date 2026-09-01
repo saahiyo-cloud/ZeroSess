@@ -38,15 +38,35 @@ def validate_or_raise():
     if not re.fullmatch(r"\d+:[\w\-]+", bot_token_raw):
         raise RuntimeError("BOT_TOKEN looks invalid (expected 123456:ABC...)")
 
+def _parse_int(name: str, default: int = 0) -> int:
+    val = os.getenv(name, "").strip()
+    if not val:
+        return default
+    try:
+        return int(val)
+    except ValueError:
+        return default
+
+def _parse_channel(name: str) -> int | str | None:
+    val = os.getenv(name, "").strip()
+    if not val or val == "0":
+        return None
+    if re.fullmatch(r"^-?\d+$", val):
+        return int(val)
+    clean = re.sub(r"^(https?://)?(www\.)?t\.me/", "", val).lstrip("@").strip()
+    if clean and not clean.startswith("+"):
+        return f"@{clean}"
+    return val or None
+
 # --- Optional ---
-OWNER_ID: int = int(_opt("OWNER_ID", "0") or 0)
-LOG_CHANNEL: int | None = int(_opt("LOG_CHANNEL", "0") or 0) or None  # only non-PII stats if set
+OWNER_ID: int = _parse_int("OWNER_ID", 0)
+LOG_CHANNEL: int | str | None = _parse_channel("LOG_CHANNEL")  # accepts chat ID (-100...), @username, or t.me link
 MUST_JOIN: str = _opt("MUST_JOIN", "")  # e.g. @yourchannel or https://t.me/...
 SUPPORT_CHAT: str = _opt("SUPPORT_CHAT", "")
-SESSION_TIMEOUT: int = int(_opt("SESSION_TIMEOUT", "300") or 300)  # seconds per step
-RATE_LIMIT_COUNT: int = int(_opt("RATE_LIMIT_COUNT", "3") or 3)
-RATE_LIMIT_WINDOW: int = int(_opt("RATE_LIMIT_WINDOW", "3600") or 3600)  # seconds
-AUTO_DELETE_SECONDS: int = int(_opt("AUTO_DELETE_SECONDS", "300") or 300)
+SESSION_TIMEOUT: int = _parse_int("SESSION_TIMEOUT", 300)  # seconds per step
+RATE_LIMIT_COUNT: int = _parse_int("RATE_LIMIT_COUNT", 3)
+RATE_LIMIT_WINDOW: int = _parse_int("RATE_LIMIT_WINDOW", 3600)  # seconds
+AUTO_DELETE_SECONDS: int = _parse_int("AUTO_DELETE_SECONDS", 300)
 
 # Messages that should never be logged
 SENSITIVE_KEYS = {"phone", "otp", "password", "api_hash", "session_string"}
