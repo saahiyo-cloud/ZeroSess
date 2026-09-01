@@ -4,15 +4,15 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 START_TEXT = """{greet} {name} 👋
 
-**🔑 Session String Generator**
-Secure • Fast • No logs • Auto-burn
+**⚡ ZeroSess — Session String Generator**
+Secure • Fast • Zero Logs • Auto-Burn
 
-Generate **Pyrogram** or **Telethon** string for your userbot / bot.
+Generate **Pyrogram v2** or **Telethon** session strings for your userbot or bot securely.
 
-⚠️ *Your session = your account password. Never share it.*
+⚠️ *Your session string equals account access. Never share it with untrusted parties.*
 """
 
-HELP_TEXT = """**📖 How to generate — 4 steps**
+HELP_TEXT = """**📖 How to generate — 4 simple steps**
 
 **Step 1 — Get API credentials**
 1. Open https://my.telegram.org → Log in
@@ -39,23 +39,23 @@ String is sent to your **Saved Messages** + one-time copy here (auto-deletes in 
 /cancel — cancel current flow
 /ping — latency
 /help — this guide
-/about — about bot
+/about — about ZeroSess
 
 💡 Tip: Use `/cancel` anytime to abort. Sensitive messages are auto-deleted.
 """
 
-ABOUT_TEXT = """**🔐 Session Gen Bot**
+ABOUT_TEXT = """**⚡ ZeroSess**
 
 Production-grade Telegram session generator.
 
 • **Pyrogram v2** & **Telethon** support
-• In-memory only — no `.session` files
+• In-memory only — no `.session` files on disk
 • Auto-delete OTP / password / phone
 • FloodWait & 2FA handling
-• Rate-limited • No PII logging
+• Rate-limited • Zero PII logging
 
-Built with Pyrogram + Telethon + tgcrypto
-Open-source — deploy your own instance.
+Built with Pyrogram + Telethon + tgcrypto.
+Open-source on GitHub — deploy your own instance.
 
 Support: {support}
 """

@@ -1,0 +1,42 @@
+name: 🐛 Bug Report
+description: Report an issue or unexpected behavior in ZeroSess
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please ensure you do not share any sensitive credentials (API HASH, OTP, Session String, Phone number).
+  - type: input
+    id: environment
+    attributes:
+      label: Deployment Environment
+      description: Where are you running ZeroSess?
+      placeholder: e.g., Docker, Railway, Render, Local VPS, Windows/Linux
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Start the bot with `/start`
+        2. Select 'Pyrogram'
+        3. Enter credentials...
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs (Non-PII)
+      description: Please sanitize and omit any phone numbers, OTPs, or API tokens before pasting!
+      render: shell

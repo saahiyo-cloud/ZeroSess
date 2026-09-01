@@ -1,117 +1,176 @@
-# ⚡ ZeroSess — Production Grade Session String Bot
+<div align="center">
 
-Secure Telegram bot to generate **Pyrogram v2** & **Telethon** session strings with guided wizard UI, auto-burn, and zero PII logging.
+# ⚡ ZeroSess
 
-> **Security:** In-memory only, no `.session` files, OTP/password/phone auto-deleted, rate-limited, FloodWait & 2FA handling. String sent to **Saved Messages** + one-time ephemeral copy.
+### Production-Grade Telegram Session String Generator Bot
 
-## ✨ Features
+[![CI](https://github.com/saahiyo-cloud/ZeroSess/actions/workflows/ci.yml/badge.svg)](https://github.com/saahiyo-cloud/ZeroSess/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+[![Docker Supported](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](Dockerfile)
+[![Pyrogram v2](https://img.shields.io/badge/Pyrogram-v2.0.106-informational.svg)](https://docs.pyrogram.org/)
+[![Telethon](https://img.shields.io/badge/Telethon-v1.41.2-informational.svg)](https://docs.telethon.dev/)
 
-- **Wizard UI:** Step 1/5 progress, `Cancel` on every step, `/cancel` anytime
-- **Validation:** `API_ID` numeric, `API_HASH` 32 hex, `phone` `+<code><num>`, OTP `1 2 3 4 5` normalize
-- **Error mapping:** `PhoneNumberInvalid`, `PhoneCodeExpired`, `SessionPasswordNeeded`, `FloodWait Xs`, etc. → user-friendly
-- **Auto-delete:** OTP/password/phone purged + session message auto-burn in 5 min (configurable) + `🗑️ Delete Now`
-- **Rate limit:** 3 gens / hour per user (env `RATE_LIMIT_COUNT` / `WINDOW`)
-- **No pyromod:** native `pyrogram` filters + `asyncio.Future` FSM — no blocking leaks
-- **Optional MUST_JOIN** channel gate
+**Secure Telegram bot to generate Pyrogram v2 & Telethon session strings with a guided wizard UI, auto-burn, and zero PII logging.**
 
-## 🚀 Quick Start
-
-### 1. Get credentials
-- **API_ID / API_HASH:** https://my.telegram.org → *API development tools* → Create app
-- **BOT_TOKEN:** https://t.me/BotFather → `/newbot`
-
-### 2. Local run
-
-```bash
-cp .env.example .env
-# edit .env with your values
-pip install -r requirements.txt
-python -m bot
-```
-
-### 3. Docker
-
-```bash
-docker compose up --build -d
-docker logs -f zerosess-bot-1
-```
-
-### 4. Deploy
-
-#### One-Click Deploy
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/saahiyo-cloud/ZeroSess)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/saahiyo-cloud/ZeroSess)
-
-> Repository: `https://github.com/saahiyo-cloud/ZeroSess`
-
-**Railway steps:**
-1. Push this folder to GitHub
-2. Click **Deploy on Railway** → set `API_ID`, `API_HASH`, `BOT_TOKEN` (from `my.telegram.org` / `@BotFather`)
-3. Deploy → logs show `✅ Bot started as @...`
-
-- **Railway / Render / Heroku:** Uses `render.yaml` / `Procfile` / `Dockerfile` — just set env vars
-- **VPS:** `systemd` + `python -m bot` or Docker
-
-## 📖 User Flow
-
-```
-/start → Generate Session → Choose Pyrogram / Telethon
-→ API_ID → API_HASH → Phone (+919...) → OTP (12345 or 1 2 3 4 5) → 2FA if needed
-→ Session string (Saved Messages + here, auto-delete)
-```
-
-Commands: `/start`, `/generate`, `/help`, `/about`, `/ping`, `/id`, `/stats` (owner), `/cancel`, `/destroy`
-
-## ⚙️ Env Vars
-
-| Var | Required | Default | Desc |
-|-----|----------|---------|------|
-| `API_ID` | yes | — | my.telegram.org |
-| `API_HASH` | yes | — | 32 hex |
-| `BOT_TOKEN` | yes | — | @BotFather |
-| `OWNER_ID` | no | 0 | for /stats |
-| `MUST_JOIN` | no | — | @channel |
-| `SUPPORT_CHAT` | no | — | shown in /about |
-| `SESSION_TIMEOUT` | no | 300 | sec per step |
-| `RATE_LIMIT_COUNT` | no | 3 |  |
-| `RATE_LIMIT_WINDOW` | no | 3600 | sec |
-| `AUTO_DELETE_SECONDS` | no | 300 |  |
-
-## 🛡️ Security Notes
-
-- Never share session strings — they equal account password. Revoke via Telegram → Settings → Devices → Terminate sessions if leaked (`/destroy` guide)
-- Run **your own instance** — don't trust public bots with your OTP
-- Bot never logs phone/OTP/password/string
-
-## 🧩 Tech Stack
-
-`pyrogram==2.0.106` + `tgcrypto` + `telethon==1.41.2` + `python-dotenv` + `psutil`
-
-## 📁 Structure
-
-```
-bot/
-  __main__.py      # entry + idle
-  config.py        # env validation
-  strings.py       # texts + keyboards
-  fsm.py           # waiter + rate limit
-  generators/
-    pyrogram_gen.py
-    telethon_gen.py
-  plugins/
-    start.py       # /start /help callbacks
-    generate.py    # wizard
-    stats.py
-    destroy.py
-```
-
-## 🐛 Troubleshooting
-
-- `FloodWait: retry in Xs` → Telegram rate-limit, wait
-- `PhoneCodeExpired` → code valid ~5 min, /generate again
-- `ApiIdInvalid` → double-check my.telegram.org values (no extra spaces)
+[Quick Start](#-quick-start) • [Features](#-features) • [Deployment](#-one-click-deploy) • [Security Policy](#-security--privacy) • [Tech Stack](#-tech-stack)
 
 ---
 
-Built for production — review `bot/plugins/generate.py` for full validation & disconnect-in-finally guarantees.
+</div>
+
+## ✨ Key Features
+
+- 🧙‍♂️ **Interactive Wizard UI:** Clean Step 1/5 progress with `Cancel` button on every step and `/cancel` anytime.
+- 🛡️ **Zero PII Logging & In-Memory:** No `.session` or `.sqlite` files written to disk. Pure ephemeral memory.
+- 🔥 **Auto-Burn & Ephemeral Output:** Sensitive inputs (phone, OTP, 2FA password) are immediately purged. Final session messages auto-delete after 5 minutes (configurable) with an instant `🗑️ Delete Now` button.
+- 🔐 **Saved Messages Delivery:** Sends the generated session string directly to your account's **Saved Messages** for security.
+- 🚦 **Smart Rate Limiting:** Built-in sliding-window rate limiter per user to prevent FloodWait and abuse.
+- ⚡ **Native Async FSM:** Built using native `pyrogram` filters & `asyncio.Future` — zero memory leaks and no fragile global state.
+- 📱 **2FA & FloodWait Handling:** Gracefully handles Two-Factor Authentication passwords and formatted FloodWait recovery timers.
+- 🚪 **Optional MUST_JOIN Gate:** Optional channel membership verification.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+- **API_ID & API_HASH:** Get them at [my.telegram.org](https://my.telegram.org) → *API development tools*.
+- **BOT_TOKEN:** Create a bot via [@BotFather](https://t.me/BotFather) → `/newbot`.
+
+### 2. Local Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/saahiyo-cloud/ZeroSess.git
+cd ZeroSess
+
+# Copy configuration
+cp .env.example .env
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the bot
+python -m bot
+```
+
+### 3. Docker Deployment
+
+```bash
+# Build and run in detached mode
+docker compose up --build -d
+
+# View live logs
+docker logs -f zerosess-bot-1
+```
+
+---
+
+## ☁️ One-Click Deploy
+
+Deploy your own instance of ZeroSess in under 60 seconds:
+
+| Platform | One-Click Button |
+| :--- | :--- |
+| **Railway** | [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/saahiyo-cloud/ZeroSess) |
+| **Render** | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/saahiyo-cloud/ZeroSess) |
+
+> **Note:** Fill in `API_ID`, `API_HASH`, and `BOT_TOKEN` in the environment variables settings on your platform.
+
+---
+
+## 📖 User Flow
+
+```mermaid
+graph LR
+    A["/start"] --> B["Choose Library\n(Pyrogram / Telethon)"]
+    B --> C["Enter API_ID & API_HASH"]
+    C --> D["Enter Phone Number\n(+1234567890)"]
+    D --> E["Enter Telegram OTP\n(1 2 3 4 5)"]
+    E --> F{"2FA Enabled?"}
+    F -- Yes --> G["Enter 2FA Password"]
+    F -- No --> H["Generate Session String"]
+    G --> H
+    H --> I["Sent to Saved Messages\n+ Ephemeral Copy (Auto-burn)"]
+```
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Required | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `API_ID` | **Yes** | — | Telegram API ID from [my.telegram.org](https://my.telegram.org) |
+| `API_HASH` | **Yes** | — | Telegram API Hash (32 hex characters) |
+| `BOT_TOKEN` | **Yes** | — | Telegram Bot Token from [@BotFather](https://t.me/BotFather) |
+| `OWNER_ID` | No | `0` | Telegram User ID of the bot owner (for `/stats`) |
+| `MUST_JOIN` | No | — | Channel username (e.g. `@MyChannel`) to force join |
+| `SUPPORT_CHAT` | No | — | Support group username or link shown in `/about` |
+| `SESSION_TIMEOUT` | No | `300` | Timeout per step in seconds (default: 5 min) |
+| `RATE_LIMIT_COUNT` | No | `3` | Maximum generations allowed per window |
+| `RATE_LIMIT_WINDOW`| No | `3600` | Window duration in seconds (default: 1 hour) |
+| `AUTO_DELETE_SECONDS`| No | `300` | Auto-deletion timer for session messages |
+
+---
+
+## 🛡️ Security & Privacy
+
+1. **In-Memory Guarantee:** ZeroSess never writes session tokens, phone numbers, or passwords to local disk or SQLite files.
+2. **Ephemeral Purge:** User-sent OTPs and 2FA passwords are removed immediately from the chat history where bot permissions allow.
+3. **Session Revocation:** If you ever suspect a session string is leaked, immediately terminate it from:
+   `Telegram Settings → Devices → Terminate All Other Sessions` (or use `/destroy` in the bot for guided steps).
+
+---
+
+## 🧩 Tech Stack
+
+- **Frameworks:** [Pyrogram v2.0.106](https://docs.pyrogram.org/) & [Telethon v1.41.2](https://docs.telethon.dev/)
+- **Encryption Accelerator:** `tgcrypto`
+- **Runtime:** Python 3.10+
+- **Containerization:** Docker & Docker Compose
+
+---
+
+## 📁 Repository Structure
+
+```
+ZeroSess/
+├── .github/
+│   ├── ISSUE_TEMPLATE/     # Bug report & feature request forms
+│   ├── workflows/ci.yml     # GitHub Actions CI workflow
+│   └── pull_request_template.md
+├── bot/
+│   ├── __init__.py
+│   ├── __main__.py          # Entrypoint & lifecycle management
+│   ├── config.py            # Environment validation & sanitization
+│   ├── fsm.py               # State machine & async step waiter
+│   ├── strings.py           # Text templates & inline keyboards
+│   ├── generators/
+│   │   ├── pyrogram_gen.py  # Pyrogram v2 in-memory auth
+│   │   └── telethon_gen.py  # Telethon in-memory auth
+│   └── plugins/
+│       ├── start.py         # /start, /help, /about handlers
+│       ├── generate.py      # Multi-step generation wizard
+│       ├── stats.py         # Admin stats & metrics
+│       └── destroy.py       # Session termination guide
+├── .env.example
+├── .gitignore
+├── app.json                 # Deployment schema
+├── CONTRIBUTING.md          # Contribution guidelines
+├── Dockerfile
+├── docker-compose.yml
+├── LICENSE                  # MIT License
+├── Procfile
+├── README.md
+├── render.yaml
+├── requirements.txt
+├── runtime.txt
+└── SECURITY.md              # Security policies & disclosures
+```
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
