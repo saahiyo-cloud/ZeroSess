@@ -27,7 +27,7 @@ Bot will ask:
 • `API_ID` (e.g. `1234567`)
 • `API_HASH` (32 hex chars)
 • `Phone` with country code (`+919876543210`)
-• `OTP` — Telegram sends to your account (format `1 2 3 4 5` also works)
+• `OTP` — Telegram sends to your account (send as `1 2 3 4 5` with spaces)
 • `2FA Password` — only if you enabled it
 
 **Step 4 — Get string**
@@ -210,12 +210,13 @@ Type `/cancel` to abort.
 
 STEP_OTP = """**Step 4/5 — OTP Code** 📩
 
-Telegram sent a code to your account (and SMS if needed).
+Telegram sent a login code to your account (or SMS).
 
-Send the **OTP** here:
-• Accept `12345` or `1 2 3 4 5` or `1-2-3-4-5`
+⚠️ **IMPORTANT:** Send the code formatted with spaces between each digit!
+• Format: `1 2 3 4 5`
+• Example: If code is 98765, send `9 8 7 6 5`
 
-Code expires in ~5 minutes.
+__(Sending digits without spaces causes Telegram to instantly expire the code for security).__
 
 Type `/cancel` to abort.
 """

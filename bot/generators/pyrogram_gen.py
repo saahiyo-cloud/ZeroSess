@@ -46,7 +46,7 @@ def normalize_otp(text: str) -> str:
     # accepts "1 2 3 4 5" / "1-2-3-4-5" / "12345"
     t = re.sub(r"[^0-9]", "", text.strip())
     if not (4 <= len(t) <= 6) or not t.isdigit():
-        raise GenError("❌ OTP must be 4–6 digits. Example: `12345` or `1 2 3 4 5`")
+        raise GenError("❌ Invalid OTP. Please send digits separated by spaces: `1 2 3 4 5`")
     return t
 
 async def generate_pyrogram_string(
