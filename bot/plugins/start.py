@@ -10,6 +10,7 @@ from ..strings import (
     kb_start, kb_help_actions, kb_choose_lib, kb_must_join
 )
 from ..fsm import is_rate_limited
+from .. import database as db
 
 START_TIME = time.time()
 
@@ -19,6 +20,8 @@ def _must_join_ok(user_id: int) -> bool:
 
 @Client.on_message(filters.command(["start", "help", "about", "ping"]))
 async def cmd_handler(bot: Client, msg: Message):
+    if msg.from_user:
+        asyncio.create_task(db.add_user(msg.from_user.id, msg.from_user.first_name, msg.from_user.username))
     cmd = msg.text.split()[0].lstrip("/").split("@")[0].lower()
     # must_join gate
     if config.MUST_JOIN:

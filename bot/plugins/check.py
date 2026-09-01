@@ -9,6 +9,7 @@ from ..strings import (
 )
 from ..fsm import get_lock, wait_for_text, is_rate_limited
 from ..generators.checker import inspect_session
+from .. import database as db
 
 @Client.on_message(filters.command(["check", "validate", "checksession"]))
 async def cmd_check(bot: Client, msg: Message):
@@ -83,6 +84,7 @@ async def run_check_flow(bot: Client, chat_id: int, user_id: int, callback_msg: 
                 pass
 
             if result.get("valid"):
+                asyncio.create_task(db.increment_metric("sessions_checked"))
                 footprint = result.get("footprint", {})
                 total_dialogs = footprint.get("total_dialogs", 0)
                 owned_count = footprint.get("owned_count", 0)

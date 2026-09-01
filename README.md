@@ -32,6 +32,7 @@
 - 🚦 **Smart Rate Limiting:** Built-in sliding-window rate limiter per user to prevent FloodWait and abuse.
 - ⚡ **Native Async FSM:** Built using native `pyrogram` filters & `asyncio.Future` — zero memory leaks and no fragile global state.
 - 📱 **2FA & FloodWait Handling:** Gracefully handles Two-Factor Authentication passwords and formatted FloodWait recovery timers.
+- 📢 **Owner Broadcast & User Analytics (`/broadcast`, `/stats`):** Send announcements (text/media/buttons with optional `-pin`) to all active users with live progress updates, FloodWait handling, and real-time generation metrics.
 - 🚪 **Optional MUST_JOIN Gate:** Optional channel membership verification.
 
 ---

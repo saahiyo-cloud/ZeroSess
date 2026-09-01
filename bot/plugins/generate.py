@@ -15,6 +15,7 @@ from ..fsm import (
     get_lock, wait_for_text, fulfill_waiter, cancel_waiter,
     is_rate_limited, record_attempt
 )
+from .. import database as db
 from ..generators import pyrogram_gen as P
 from ..generators import telethon_gen as T
 from telethon.errors import SessionPasswordNeededError
@@ -201,6 +202,8 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = 
                     lib_label = "Telethon (Bot)"
 
                 record_attempt(user_id)
+                asyncio.create_task(db.increment_metric("sessions_generated"))
+                asyncio.create_task(db.increment_metric("sessions_bot"))
                 try:
                     await status.delete()
                 except Exception:
@@ -463,6 +466,11 @@ async def start_wizard(bot: Client, query: CallbackQuery, lib: str, mode: str = 
                 text_for_saved = f"✅ Your {lib_label} session string:\n\n`{session}`\n\n⚠️ Keep it secret!"
                 await T.send_to_saved(client, text_for_saved)
             record_attempt(user_id)
+            asyncio.create_task(db.increment_metric("sessions_generated"))
+            if lib == "pyrogram":
+                asyncio.create_task(db.increment_metric("sessions_pyro"))
+            else:
+                asyncio.create_task(db.increment_metric("sessions_tele"))
             try:
                 await export_status.delete()
             except Exception:
